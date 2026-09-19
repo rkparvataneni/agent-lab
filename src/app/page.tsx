@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Check, FlaskConical, Play } from "lucide-react";
+import { ArrowRight, Check, FlaskConical, Terminal } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,19 +27,17 @@ export default function HomePage() {
             Learn agentic AI by watching the loop work.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Five short lessons, then a playground. You will see a model think, call
-            tools, stall when a hand is missing, remember a fact, and recover from a
-            failed booking. No API key. The agent is simulated so the traces stay
-            readable.
+            Concepts in the studio. Real LangChain and LangGraph in the developer
+            track: StateGraph, tools, create_agent, checkpoints, interrupts,
+            multi-agent, and production evals. No API key required.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <LinkButton href={`/lesson/${nextLesson.slug}`}>
-              {completed.length === 0 ? "Start lesson 01" : allDone ? "Replay lesson 01" : `Continue · ${nextLesson.title}`}
+            <LinkButton href="/build">
+              Developer track · LangGraph
               <ArrowRight data-icon="inline-end" />
             </LinkButton>
-            <LinkButton href="/playground" variant="outline">
-              <Play data-icon="inline-start" />
-              Skip to playground
+            <LinkButton href={`/lesson/${nextLesson.slug}`} variant="outline">
+              {completed.length === 0 ? "Concept studio" : allDone ? "Replay concepts" : `Continue · ${nextLesson.title}`}
             </LinkButton>
           </div>
         </div>
@@ -128,6 +126,27 @@ export default function HomePage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Terminal className="size-4" />
+            </span>
+            <div>
+              <h2 className="font-heading text-2xl">Developer track</h2>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+                Ten LangChain / LangGraph files you run with pytest. Graphs, tools,
+                create_agent, memory, HITL, multi-agent, evals.
+              </p>
+            </div>
+          </div>
+          <LinkButton href="/build">
+            Open the build path
+            <ArrowRight data-icon="inline-end" />
+          </LinkButton>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card/60 p-5 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
               <FlaskConical className="size-4" />
             </span>
             <div>

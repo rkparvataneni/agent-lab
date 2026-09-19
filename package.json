@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 43217",
     "lint": "eslint",
-    "test": "tsx --test src/lib/agent/runtime.test.ts"
+    "test": "tsx --test src/lib/agent/runtime.test.ts",
+    "test:python": "cd python && PYTHONPATH=. python -m pytest"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

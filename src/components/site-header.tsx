@@ -33,6 +33,15 @@ export function SiteHeader() {
             Path
           </Link>
           <Link
+            href="/build"
+            className={cn(
+              "rounded-md px-2 py-1 text-muted-foreground transition-colors hover:text-foreground",
+              pathname.startsWith("/build") && "text-foreground",
+            )}
+          >
+            Build
+          </Link>
+          <Link
             href="/playground"
             className={cn(
               "rounded-md px-2 py-1 text-muted-foreground transition-colors hover:text-foreground",

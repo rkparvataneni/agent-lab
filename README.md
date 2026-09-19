@@ -1,20 +1,11 @@
 # Agentic Lab
 
-A short workshop for **agentic AI development**. Five lessons walk the same idea from different sides: an agent is a loop around a model that can use tools, remember facts, and recover when the world says no.
+Two tracks, one repo.
 
-The studio on each page is a **simulated agent**. It is deterministic on purpose. You can step a trace like a debugger, strip a tool and watch it stall, and rerun a booking after a conflict. No API key is required.
+1. **Concept studio** (Next.js) — watch a simulated agent think, call tools, stall, remember, and recover. No API key.
+2. **Developer track** (Python) — build the same jobs with **LangChain 1.x** and **LangGraph 1.x**: `StateGraph`, tools, `create_agent`, checkpoints, interrupts, a supervisor, and CI evals.
 
-## Lessons
-
-1. **The agent loop** — chatbot vs agent on the same question
-2. **Tools** — schemas you execute, arguments the model proposes
-3. **ReAct** — thought → action → observation
-4. **Memory** — history, scratchpad, and notes worth keeping
-5. **Plan, then recover** — write steps, then replan when a room is taken
-
-The **playground** exposes every switch on the same runtime.
-
-## Run locally
+## Concept studio
 
 ```bash
 npm install
@@ -23,11 +14,39 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
+- `/` path
+- `/lesson/loop` … `/lesson/planning`
+- `/playground`
+- `/build` — the LangGraph syllabus, with the real Python source on each page
+
 ```bash
-npm test    # simulated runtime
+npm test
 npm run build
 ```
 
-## How the agent is faked
+## Developer track
 
-`src/lib/agent/runtime.ts` is a small, readable stand-in for an LLM plus tool host. Missions live in `src/lib/agent/missions.ts`. Lesson copy lives in `src/lib/lessons.ts`. When you later swap this for a real model, keep the same step kinds (`thought`, `action`, `observation`, `plan`, `replan`, `memory`, `answer`, `error`) so the trace UI still works.
+```bash
+cd python
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+PYTHONPATH=. python -m agentic_lab list
+PYTHONPATH=. python -m agentic_lab 04
+PYTHONPATH=. python -m pytest
+```
+
+Full syllabus: [`python/README.md`](python/README.md).
+
+The model is scripted (`python/agentic_lab/llm.py`) so every lesson is deterministic. Swap it for `ChatOpenAI` when you have a key. The graph stays.
+
+## What to learn, in order
+
+| Concepts (studio) | Code (Python) |
+|-------------------|----------------|
+| Chatbot vs agent | 01 chain vs graph, 02 StateGraph |
+| Tools | 03 `@tool` |
+| ReAct | 04 hand-built graph, 05 `create_agent` |
+| Memory | 06 checkpointer + `thread_id` |
+| Plan / recover | 07 plan-execute-replan |
+| — | 08 human-in-the-loop, 09 multi-agent, 10 production evals |
