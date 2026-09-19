@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/link-button";
 
 export default function NotFound() {
   return (
@@ -13,7 +12,7 @@ export default function NotFound() {
         path and pick a numbered lesson.
       </p>
       <div>
-        <Button render={<Link href="/" />}>Back to the path</Button>
+        <LinkButton href="/">Back to the path</LinkButton>
       </div>
     </div>
   );

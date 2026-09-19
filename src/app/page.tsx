@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Check, FlaskConical, Play } from "lucide-react";
+import { LinkButton } from "@/components/link-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,14 +33,14 @@ export default function HomePage() {
             readable.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Button size="lg" render={<Link href={`/lesson/${nextLesson.slug}`} />}>
+            <LinkButton href={`/lesson/${nextLesson.slug}`}>
               {completed.length === 0 ? "Start lesson 01" : allDone ? "Replay lesson 01" : `Continue · ${nextLesson.title}`}
               <ArrowRight data-icon="inline-end" />
-            </Button>
-            <Button variant="outline" size="lg" render={<Link href="/playground" />}>
+            </LinkButton>
+            <LinkButton href="/playground" variant="outline">
               <Play data-icon="inline-start" />
               Skip to playground
-            </Button>
+            </LinkButton>
           </div>
         </div>
 
@@ -137,10 +138,10 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <Button size="lg" render={<Link href="/playground" />}>
+          <LinkButton href="/playground">
             Open playground
             <ArrowRight data-icon="inline-end" />
-          </Button>
+          </LinkButton>
         </div>
       </section>
     </div>

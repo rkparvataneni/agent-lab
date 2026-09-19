@@ -6,6 +6,8 @@ export function generateStaticParams() {
   return LESSON_SLUGS.map((slug) => ({ slug }));
 }
 
+export const dynamicParams = false;
+
 export async function generateMetadata({
   params,
 }: {

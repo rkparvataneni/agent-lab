@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { LessonSlug } from "@/lib/lessons";
 import {
-  emptyProgress,
+  EMPTY_PROGRESS,
   markComplete,
   readProgress,
   resetProgress,
@@ -11,8 +11,10 @@ import {
 } from "@/lib/progress";
 
 const CHANGE_EVENT = "agentic-lab-progress";
+const CLIENT_READY = true;
+const SERVER_READY = false;
 
-let snapshot: ProgressState = emptyProgress();
+let snapshot: ProgressState = EMPTY_PROGRESS;
 let snapshotKey = "";
 
 function currentKey() {
@@ -39,7 +41,7 @@ function getSnapshot(): ProgressState {
 }
 
 function getServerSnapshot(): ProgressState {
-  return emptyProgress();
+  return EMPTY_PROGRESS;
 }
 
 function emitChange() {
@@ -50,8 +52,8 @@ export function useProgress() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const ready = useSyncExternalStore(
     subscribe,
-    () => true,
-    () => false,
+    () => CLIENT_READY,
+    () => SERVER_READY,
   );
 
   const complete = useCallback((slug: LessonSlug) => {

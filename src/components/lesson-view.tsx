@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { CodeBlock } from "@/components/code-block";
+import { LinkButton } from "@/components/link-button";
 import { Studio } from "@/components/studio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,15 +80,15 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
       <footer className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
         {prev ? (
-          <Button variant="ghost" size="lg" render={<Link href={`/lesson/${prev.slug}`} />}>
+          <LinkButton href={`/lesson/${prev.slug}`} variant="ghost">
             <ArrowLeft data-icon="inline-start" />
             {prev.number} {prev.title}
-          </Button>
+          </LinkButton>
         ) : (
-          <Button variant="ghost" size="lg" render={<Link href="/" />}>
+          <LinkButton href="/" variant="ghost">
             <ArrowLeft data-icon="inline-start" />
             Back to the path
-          </Button>
+          </LinkButton>
         )}
         <div className="flex flex-wrap gap-2">
           {!done ? (
@@ -96,15 +97,15 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
             </Button>
           ) : null}
           {next ? (
-            <Button size="lg" render={<Link href={`/lesson/${next.slug}`} />}>
+            <LinkButton href={`/lesson/${next.slug}`}>
               Next · {next.title}
               <ArrowRight data-icon="inline-end" />
-            </Button>
+            </LinkButton>
           ) : (
-            <Button size="lg" render={<Link href="/playground" />}>
+            <LinkButton href="/playground">
               Open the playground
               <ArrowRight data-icon="inline-end" />
-            </Button>
+            </LinkButton>
           )}
         </div>
       </footer>

@@ -6,8 +6,10 @@ export type ProgressState = {
   completed: LessonSlug[];
 };
 
+export const EMPTY_PROGRESS: ProgressState = { completed: [] };
+
 export function emptyProgress(): ProgressState {
-  return { completed: [] };
+  return EMPTY_PROGRESS;
 }
 
 export function readProgress(): ProgressState {
