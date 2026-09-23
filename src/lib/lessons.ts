@@ -47,38 +47,31 @@ export const LESSONS: Lesson[] = [
   {
     slug: "loop",
     number: "01",
-    title: "The agent loop",
-    duration: "8 min",
+    title: "Control policy",
+    duration: "12 min",
     summary:
-      "A chatbot predicts the next sentence. An agent is a loop that can act, see the result, and decide again.",
+      "The model may propose the next action. An edge you wrote decides whether an answer is allowed to leave.",
     concept: {
-      heading: "The difference is architecture, not vibes",
+      heading: "The edge is the product",
       paragraphs: [
-        "Most people meet language models as chat boxes. That interface hides the real design choice. A chatbot is a single completion: prompt in, text out. An agent is a program that keeps calling the model until a goal is done.",
-        "Each turn the model must choose: answer now, or take an action. If it acts, your code runs a tool and feeds the observation back in. That perceive → reason → act → observe cycle is the whole game. Fancy planners, multi-agent graphs, and memory layers are variations on this loop.",
-        "Watch the same question hit both systems. The chatbot hedges because it cannot see the weekend forecast. The agent refuses to guess, calls weather, and then answers with the observation in hand.",
+        "You already know the loop: propose, act, observe, repeat. The decision that separates a demo from a system you can own is who is allowed to end it. A one-shot completion has a single exit, whatever the model wrote. A graph you can ship has an exit condition in code, usually “every required fact is an observation in state.”",
+        "Prompts ask. Edges commit. The model can still pick a bad tool, and that is a description or a router bug. It must not be able to promote a draft into a final answer when the forecast was never fetched. Temperature will not fix that. A missing precondition will.",
+        "Run the packing question both ways. The completion hedges, because nothing in that call can reject its own text. The graph keeps the answer edge closed until weather returns. Same model behavior, different control policy.",
       ],
       takeaways: [
-        "An agent is a loop around a model, not a smarter model.",
-        "The model proposes actions. Your code executes them.",
-        "Stopping without a tool is a valid, honest outcome.",
+        "An answer is a state transition with a precondition.",
+        "Keep the one-shot call as a node. Do not let it be the job.",
+        "If the model answered without evidence, the bug is the edge.",
       ],
     },
     code: {
-      title: "The loop you will keep rewriting",
-      source: `async function runAgent(goal: string, tools: Tool[]) {
-  const observations: string[] = []
+      title: "Refuse until the observation exists",
+      source: `function route(state: { evidence: string }) {
+  return state.evidence.trim() ? "answer" : "refuse"
+}
 
-  for (let step = 0; step < 8; step++) {
-    const move = await llm.choose({ goal, tools, observations })
-    if (move.kind === "answer") return move.text
-
-    const result = await tools.call(move.tool, move.args)
-    observations.push(\`\${move.tool}: \${result}\`)
-  }
-
-  throw new Error("Stopped before the agent answered")
-}`,
+// draft is a node. It does not get a vote on route().
+graph.addConditionalEdges("draft", route)`,
     },
     demo: {
       missionId: "tokyo-weekend",
@@ -90,42 +83,37 @@ export const LESSONS: Lesson[] = [
       dualRun: false,
     },
     studioHint:
-      "Ask both systems the same packing question. The chatbot guesses. The agent looks it up.",
+      "Run both. The completion guesses. The graph stays on the refuse edge until weather is in state.",
   },
   {
     slug: "tools",
     number: "02",
-    title: "Tools are the hands",
-    duration: "10 min",
+    title: "Tool contracts",
+    duration: "12 min",
     summary:
-      "The model cannot fetch weather or do reliable math. You attach typed functions and let it fill in the arguments.",
+      "A schema is not a contract. You still declare the side effect, the error class, and whether that class is allowed to retry.",
     concept: {
-      heading: "Schemas, not magic plugins",
+      heading: "Classify the failure before you call again",
       paragraphs: [
-        "A tool is an ordinary function plus a JSON schema the model can read. The schema names the function, explains when to use it, and lists arguments. The model never runs the function. It emits a call. Your runtime validates the arguments and executes the code.",
-        "That split is the safety boundary. The model can ask to search. It cannot browse the open internet unless you wrote a search tool and decided what it returns. Keep tools small, deterministic when you can, and loud when they fail.",
-        "This lesson uses two tools on purpose. Tip math needs a calculator. Restaurant hours need search. Turn one off and the agent should stall instead of inventing the missing fact.",
+        "You already know the model emits {name, args} and your runtime executes. What usually ships underspecified is the rest of the contract: read or write, idempotent or not, and an error class. ok, policy, not_found, failed, and timeout are different edges.",
+        "Policy means the call was illegal: rejected calculator input, a tool that is not bound. Do not retry it. not_found means the index was empty. Do not invent a substitute fact. failed and timeout are the only classes you retry, and only inside a budget. A missing tool is a broken contract, so the run stops.",
+        "Strip calculator or search on the dinner check. The trace should block on the missing half. A 17% tip the model “roughly” knows is a policy failure, not a helpful completion. If rooms is bound, assume it will be called. Least privilege is which tools you attach, not a sentence in the prompt.",
       ],
       takeaways: [
-        "A tool is a schema + an execute function you control.",
-        "Missing tools should block the run, not invite hallucination.",
-        "Give each tool one job. Compose them in the loop.",
+        "Every tool declares side effect, idempotency, and error class.",
+        "Policy and not_found are not retries.",
+        "If the tool is bound, assume the model will call it.",
       ],
     },
     code: {
-      title: "A tool the model can request",
-      source: `const calculator = {
-  name: "calculator",
-  description: "Evaluate a simple arithmetic expression.",
-  parameters: {
-    type: "object",
-    properties: {
-      expression: { type: "string" },
-    },
-    required: ["expression"],
-  },
-  execute: async ({ expression }) => String(Function(\`return (\${expression})\`)()),
-}`,
+      title: "Retry is a property of the error class",
+      source: `type ErrorClass = "ok" | "policy" | "not_found" | "failed" | "timeout"
+
+function retryable(kind: ErrorClass) {
+  return kind === "failed" || kind === "timeout"
+}
+
+// "Rejected: ..." is policy. A second identical call will not make it legal.`,
     },
     demo: {
       missionId: "dinner-tip",
@@ -145,38 +133,38 @@ export const LESSONS: Lesson[] = [
       },
     },
     studioHint:
-      "Run with both tools, then strip calculator or search. A good agent stops when a hand is missing.",
+      "Run with both tools, then strip one. The run should stop on the missing contract, not estimate the gap.",
   },
   {
     slug: "react",
     number: "03",
-    title: "ReAct: think, act, look",
-    duration: "10 min",
+    title: "Loop guards",
+    duration: "12 min",
     summary:
-      "ReAct is the default production pattern: a thought, a tool call, an observation, then another thought.",
+      "ReAct is the default cycle, not the default architecture. Cap the steps, and stop when the same call is about to run again.",
     concept: {
-      heading: "Interleave reasoning with evidence",
+      heading: "A trace without a budget will spend one",
       paragraphs: [
-        "ReAct (Yao et al., 2022) is a prompting and tracing pattern: the model writes a short thought, names an action, then waits for an observation. It does not dump a finished essay and hope the facts were right.",
-        "The thought is not decoration. It is working memory for the next decision: why this tool, what would change my mind, what I still lack. When you debug an agent, you debug this trace. If thoughts are vague, tool calls get sloppy. If thoughts repeat, you are looping.",
-        "Step through a room booking. Notice the rhythm: thought → calendar → observation → thought → rooms → observation → answer. That rhythm is what you log, evaluate, and later put behind a debugger.",
+        "Thought, action, observation is the unit you log and the unit you budget. ReAct is the right cycle when the next tool depends on the last observation. It is the wrong architecture when the steps are known before the first call. Those belong in state, with a router.",
+        "recursion_limit is a backstop. The policy is a fingerprint of tool name plus arguments. A second identical call is a loop, not persistence. Stop it, then replan or escalate. A vaguer thought will not make the same arguments legal.",
+        "Step the booking. You should be able to point at the edge that allowed calendar, the edge that allowed rooms, and the condition that would have stopped a repeat. That trace is the thing you eval. The final sentence is not.",
       ],
       takeaways: [
-        "Thought, action, observation is the unit of work.",
-        "Traces are how you debug agents — treat them as product UI.",
-        "Cap the number of cycles. Infinite loops are a real failure mode.",
+        "A duplicate (tool, args) pair is a stop, not another try.",
+        "recursion_limit catches runaway graphs. It is not the design.",
+        "Hand-build this cycle once. A harness is the same graph plus middleware.",
       ],
     },
     code: {
-      title: "Force the model to speak ReAct",
-      source: `const system = \`
-You are an agent. On every turn output exactly one of:
-- THOUGHT: why the next action helps the goal
-- ACTION: tool_name \\n ARGS: { ... }
-- ANSWER: the final reply to the user
+      title: "Stop a repeated fingerprint",
+      source: `function route(state: { messages: Msg[]; calls: string[] }) {
+  const fp = fingerprint(lastToolCall(state.messages))
+  if (!fp) return "end"
+  if (state.calls.slice(0, -1).includes(fp)) return "stop"
+  return "tools"
+}
 
-Never invent an observation. Wait for the runtime.
-\``,
+invoke(graph, input, { recursion_limit: 6 })`,
     },
     demo: {
       missionId: "book-room",
@@ -196,39 +184,40 @@ Never invent an observation. Wait for the runtime.
       },
     },
     studioHint:
-      "Use Step to walk the booking one card at a time. Read every thought before the next tool fires.",
+      "Step the booking. Name the edge that allowed each tool, and the fingerprint that would stop a repeat.",
   },
   {
     slug: "memory",
     number: "04",
-    title: "Memory that earns its keep",
-    duration: "9 min",
+    title: "Context engineering",
+    duration: "12 min",
     summary:
-      "Without memory every run starts over. With too much memory the model drowns. Store only facts you will reuse.",
+      "A checkpointer replays a thread. A store holds a fact you chose. Retrieve by the goal, not by pasting the transcript back in.",
     concept: {
-      heading: "Three memories, three jobs",
+      heading: "Thread state is not a memory system",
       paragraphs: [
-        "Conversation history is the chat log. It tells the model what the user already said. It is the wrong place for tool transcripts that will never be needed again.",
-        "The scratchpad is this-run working memory: thoughts, partial results, the current plan. It dies when the run ends. Long-term notes are curated facts you choose to keep: 'West room has a whiteboard', 'Katsu House closes at 22:00'. Those notes are retrieved on the next mission.",
-        "Run the booking twice. The first pass pays for calendar and rooms. The second pass, with memory on, recalls the useful room and skips the dead end. That is the economic argument for memory: spend tokens on new evidence, not on relearning the building.",
+        "A checkpointer under a thread id is the conversation. Same id, the next turn sees prior messages. A new id is a new life. Swapping InMemorySaver for Postgres later does not create long-term memory. It only makes the thread survive the process.",
+        "The scratchpad is this run: the plan, the failure class, the calls already made. It dies with the run. The store is a fact you explicitly wrote, with a key a later thread can query: “West room works for 4 at 2pm and has a whiteboard.” Tool transcripts do not belong there. Another user’s thread is not a retrieval index.",
+        "Run the booking once so the note is written, then run it again. The second trace should hit the store, confirm the calendar, and reserve West. It should not rediscover East. If the recall is an essay, you stored the wrong object.",
       ],
       takeaways: [
-        "History, scratchpad, and long-term notes are different stores.",
-        "Write notes as facts, not essays.",
-        "Retrieve only what the current goal can use.",
+        "Checkpointer and store are different reads.",
+        "Write facts with a retrieval key. Cap the store.",
+        "A fresh thread must not see another thread’s messages.",
       ],
     },
     code: {
-      title: "Keep notes tiny and factual",
-      source: `type Memory = {
-  history: { role: "user" | "assistant"; content: string }[]
-  scratchpad: string[]
-  notes: string[]
+      title: "Recall a fact, not a transcript",
+      source: `const store = new Map<string, string>()
+
+function remember(key: string, fact: string) {
+  store.set(key, fact)
 }
 
-function remember(notes: string[], fact: string) {
-  if (notes.includes(fact)) return notes
-  return [...notes, fact].slice(-20)
+function recall(goal: string) {
+  return [...store.entries()]
+    .filter(([key]) => goal.includes(key))
+    .map(([, fact]) => fact)
 }`,
     },
     demo: {
@@ -250,38 +239,35 @@ function remember(notes: string[], fact: string) {
       },
     },
     studioHint:
-      "Run once to write a note, then run again. The second trace should recall West/East instead of rediscovering it.",
+      "Run once to write the fact, then again. The second trace should reserve from the store and skip the failed path.",
   },
   {
     slug: "planning",
     number: "05",
-    title: "Plan, then recover",
-    duration: "10 min",
+    title: "Failure policy",
+    duration: "12 min",
     summary:
-      "Write the steps before you spend tool calls. When the world says no, replan — do not hammer the same door.",
+      "Name the failure, then pick the edge: retry a timeout, replan a conflict, escalate a denial.",
     concept: {
-      heading: "A plan is a cheap hypothesis",
+      heading: "Retry, replan, or stop",
       paragraphs: [
-        "For any goal with more than one tool call, ask the model for a short plan first. The plan is not a contract with the universe. It is a hypothesis you can audit: did we forget a constraint? Are we about to do work we cannot use?",
-        "The useful skill is recovery. Tools fail. Rooms get taken. APIs 429. A brittle agent retries the same call. A durable one observes the failure, revises the plan, and picks a different action. That is still the same loop — the thought just got more honest.",
-        "Turn on a booking conflict. East is the obvious room and it is held. The agent should refuse North (too small, no board) and take West. That decision is the whole lesson.",
+        "A plan in state is a hypothesis you can test. It is not permission for the model to invent the recovery. The next node is a function of the failure class. Transient, such as a calendar timeout: retry once, then stop. Conflict, such as East held: replan onto a room that still meets seats and whiteboard. Denied: nothing legal exists. Escalate. Do not book a worse room to make the trace look finished.",
+        "Retrying a conflict spends a tool call to relearn the same fact. North fails both constraints, so it is not a creative alternative. The useful trace names the class before it names the next room.",
+        "Leave the conflict on. East matches and is held. The replan edge should select West and should not contain a second reserve of East. That edge belongs in the graph, where a unit test can see it.",
       ],
       takeaways: [
-        "Plan first when the job has more than one dependency.",
-        "Treat a failed tool as new evidence, not an embarrassment.",
-        "Replanning is cheaper than an infinite retry.",
+        "The failure class is state. The next node is a function of it.",
+        "Do not ask the model to choose the recovery edge.",
+        "A denial escalates. It does not replan into a weaker constraint.",
       ],
     },
     code: {
-      title: "Separate planning from acting",
-      source: `const plan = await llm.plan(goal, tools)
-
-for (const step of plan.steps) {
-  const result = await tools.call(step.tool, step.args)
-  if (result.ok) continue
-
-  const next = await llm.replan({ goal, plan, failed: step, result })
-  return runPlan(next)
+      title: "The class picks the edge",
+      source: `function nextStep(state: Job) {
+  if (state.answer) return END
+  if (state.failure === "transient" && state.retries < 1) return "execute"
+  if (state.failure === "denied") return "escalate"
+  return "replan" // conflict: do not retry East
 }`,
     },
     demo: {
@@ -304,7 +290,7 @@ for (const step of plan.steps) {
       },
     },
     studioHint:
-      "Keep the conflict toggle on. Watch the plan, the failed East room, then the replan onto West.",
+      "Keep the conflict on. The trace should name the failure, skip East, and reserve West.",
   },
 ];
 

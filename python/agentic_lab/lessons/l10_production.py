@@ -1,27 +1,33 @@
-"""10 · Production patterns
+"""10 · Trajectory evals
 
-Before you ship an agent, lock these down:
+A final sentence that mentions an umbrella is not an eval. The trajectory
+is: human, model tool-call, tool result, then the answer. If weather never
+ran, the run fails even when the prose sounds confident.
 
-1. Structured output — a Pydantic model, not a blob of prose you regex.
-2. Timeouts and retries on tools, not on the whole graph blindly.
-3. Streaming — users watch tokens/tool events, not a 40s spinner.
-4. Tracing — LangSmith (or your own) on every node and tool.
-5. Evals — a fixture suite like this file. If weather is down, the graph
-   must block, not invent rain. Run it in CI.
-6. Checkpointer in a real database. InMemorySaver dies with the process.
-7. Least-privilege tools. The weather specialist never sees rooms.reserve.
-8. HITL in front of irreversible actions (lesson 08).
+Ship checklist, in the order you will actually need it:
+
+1. Structured output — a schema, not a regex over prose.
+2. Tool contracts — policy and not_found are not retries (lesson 03).
+3. Loop guards — duplicate calls stop (lesson 04).
+4. Failure classes — retry, replan, escalate (lesson 07).
+5. Approval before every write (lesson 08).
+6. Disjoint toolboxes on every handoff (lesson 09).
+7. A checkpointer that outlives the process. InMemorySaver does not.
+8. Tracing on the node and the tool, not only on the final message.
+
+This fixture suite is the one that belongs in CI.
 """
 
 from __future__ import annotations
 
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
-from agentic_lab.lessons import l04_react_graph, l07_plan_replan
+from agentic_lab.lessons import l03_tools, l04_react_graph, l07_plan_replan
 from agentic_lab.tools import calculator
 
 SLUG = "production"
-TITLE = "Production patterns"
+TITLE = "Trajectory evals"
 FILE = "l10_production.py"
 
 
@@ -40,14 +46,33 @@ def structured_tip() -> TipCheck:
     )
 
 
+def tokyo_trajectory() -> bool:
+    result = l04_react_graph.build().invoke(
+        {"messages": [HumanMessage(content=l04_react_graph.GOAL)], "calls": []},
+        {"recursion_limit": 6},
+    )
+    messages = result["messages"]
+    kinds = [message.type for message in messages]
+    used_weather = any(getattr(message, "name", None) == "weather" for message in messages)
+    answer = str(messages[-1].content).lower()
+    return kinds == ["human", "ai", "tool", "ai"] and used_weather and "umbrella" in answer
+
+
 def eval_suite() -> dict[str, bool]:
     tokyo = l04_react_graph.run()
     booking = l07_plan_replan.run()
+    tools = l03_tools.run()
     tip = structured_tip()
     return {
         "tokyo_uses_weather": tokyo["tool_used"],
         "tokyo_mentions_umbrella": "umbrella" in tokyo["answer"].lower(),
+        "tokyo_trajectory": tokyo_trajectory(),
+        "loop_guard_stops_repeat": tokyo["loop_stopped"] and tokyo["loop_tool_calls"] == 1,
         "conflict_replans": booking["replanned"],
+        "conflict_drops_east": "East" not in booking["conflict"],
+        "transient_retries_once": booking["transient_retried"],
+        "denied_escalates": booking["denied"].startswith("No legal room"),
+        "policy_is_not_retried": tools["rejected_class"] == "policy" and not tools["retry_policy_error"],
         "tip_is_14_62": tip.amount_usd == 14.62,
     }
 

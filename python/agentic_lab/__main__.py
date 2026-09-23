@@ -20,7 +20,7 @@ def _public(value: Any) -> Any:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run Agentic Lab LangGraph lessons.")
+    parser = argparse.ArgumentParser(description="Run the Agentic Lab expert LangGraph lessons.")
     parser.add_argument(
         "lesson",
         nargs="?",

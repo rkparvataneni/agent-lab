@@ -1,11 +1,11 @@
-"""05 · create_agent harness
+"""05 · Harness boundary
 
-LangChain 1.x ships create_agent on top of LangGraph. Same loop as lesson 04,
-plus a system prompt and a middleware stack you can extend.
+create_agent is the lesson 04 loop plus a system prompt.
+Use it when the policy really is "this model, these tools, this thread."
 
-Use create_agent when the job is "model + tools + memory + a bit of policy."
-Drop to StateGraph when you need a planner node, a supervisor, or a
-deterministic branch the model should not vote on.
+The harness will not notice that the model answered before both tools ran.
+That check stays in your code. When a step must be deterministic —
+planner, supervisor, approval gate — leave the harness and write the node.
 """
 
 from __future__ import annotations
@@ -17,10 +17,11 @@ from agentic_lab.llm import ScriptedChatModel
 from agentic_lab.tools import calculator, search
 
 SLUG = "create-agent"
-TITLE = "create_agent harness"
+TITLE = "Harness boundary"
 FILE = "l05_create_agent.py"
 
 GOAL = "What's a 17% tip on an $86 dinner, and is Katsu House still open?"
+REQUIRED = ("calculator", "search")
 
 
 def build():
@@ -34,19 +35,24 @@ def build():
     )
 
 
+def grounded(messages: list) -> bool:
+    """Both required tools must have returned before the final answer."""
+    names = [getattr(message, "name", "") for message in messages]
+    if any(name not in names for name in REQUIRED):
+        return False
+    last = len(messages) - 1
+    tool_at = [index for index, name in enumerate(names) if name in REQUIRED]
+    return bool(tool_at) and max(tool_at) < last and bool(getattr(messages[last], "content", ""))
+
+
 def run() -> dict:
     result = build().invoke({"messages": [HumanMessage(content=GOAL)]})
     messages = result["messages"]
     return {
         "goal": GOAL,
         "answer": messages[-1].content,
-        "used": sorted(
-            {
-                getattr(m, "name", "")
-                for m in messages
-                if getattr(m, "name", "") in {"calculator", "search"}
-            }
-        ),
+        "used": sorted({name for name in (getattr(m, "name", "") for m in messages) if name in REQUIRED}),
+        "grounded": grounded(messages),
     }
 
 

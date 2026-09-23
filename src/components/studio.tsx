@@ -256,14 +256,14 @@ export function Studio({
             </CardHeader>
             <CardContent className="pt-4 text-sm leading-6 text-muted-foreground">
               {chatbot ??
-                "Press run. The chatbot will answer immediately, with no tools and no loop."}
+                "Press run. This side is one completion: no edge can reject the text."}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="border-b">
               <CardTitle className="flex items-center justify-between gap-2">
                 Agent
-                <Badge>tool loop</Badge>
+                <Badge>evidence gate</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">

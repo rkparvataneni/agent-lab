@@ -33,7 +33,7 @@ function buildTokyo(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "plan",
       title: "Plan",
-      body: "1. Fetch the Tokyo weekend forecast.\n2. Decide whether Saturday rain is likely enough to pack an umbrella.",
+      body: "1. Weather is a required observation. Do not answer from climate priors.\n2. Open the answer edge only after the forecast is in state.",
     });
   }
 
@@ -46,7 +46,7 @@ function buildTokyo(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "I already logged this forecast. No need to call weather again.",
+      body: "Store hit for this goal. The forecast is already evidence. Do not spend another weather call.",
     });
     steps.push({
       kind: "answer",
@@ -59,7 +59,7 @@ function buildTokyo(config: RunConfig, recalled: string[]): StepDraft[] {
   steps.push({
     kind: "thought",
     title: "Thought",
-    body: "A packing decision depends on the actual weekend forecast, not a climate average. I should look it up.",
+      body: "No forecast in state. The answer edge stays closed until weather returns an observation.",
   });
   steps.push({
     kind: "action",
@@ -77,7 +77,7 @@ function buildTokyo(config: RunConfig, recalled: string[]): StepDraft[] {
   steps.push({
     kind: "thought",
     title: "Thought",
-    body: "Saturday rain is likely. An umbrella is worth the suitcase space even if Sunday is dry.",
+      body: "Saturday is 70% rain. That observation is enough to open the answer edge. Sunday does not cancel it.",
   });
   steps.push({
     kind: "answer",
@@ -96,7 +96,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "plan",
       title: "Plan",
-      body: "1. Compute 17% of $86 with the calculator.\n2. Look up Katsu House hours.\n3. Answer both parts together.",
+      body: "1. Tip is a calculator result, not an estimate.\n2. Hours are a search result.\n3. Answer only after both contracts return ok.",
     });
   }
 
@@ -109,7 +109,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "I already computed the tip and checked hours. I'll confirm the restaurant is still in the same window.",
+      body: "Store already has the tip. Hours can go stale, so re-read search. Do not recompute 86 * 0.17.",
     });
     steps.push({
       kind: "action",
@@ -136,7 +136,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "17% of 86 is easy to get wrong in my head. I'll compute it, then check hours.",
+      body: "Arithmetic is a tool contract. Call the calculator, then search. Do not estimate either number.",
     });
     steps.push({
       kind: "action",
@@ -158,7 +158,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
       steps.push({
         kind: "thought",
         title: "Thought",
-        body: "I can look up hours, but I should not guess 17% of 86.",
+        body: "Search can return hours. The tip still has no calculator result, so the answer edge stays closed.",
       });
     }
     steps.push({
@@ -180,7 +180,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "Both facts are in. I can answer the whole question.",
+      body: "Both tools returned ok. The answer can cite $14.62 and 22:00. Nothing else is still required.",
     });
     steps.push({
       kind: "answer",
@@ -194,7 +194,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "error",
       title: "Blocked",
-      body: "Tip is $14.62, but hours are unknown. Attach the search tool to finish the second half.",
+      body: "Calculator returned $14.62. Search is not bound, so hours are not_found, not a guess. Stop.",
     });
     return steps;
   }
@@ -202,7 +202,7 @@ function buildDinner(config: RunConfig, recalled: string[]): StepDraft[] {
   steps.push({
     kind: "error",
     title: "Blocked",
-    body: "Katsu House is open until 22:00, but I will not guess 17% of $86. Attach the calculator.",
+      body: "Search returned hours. The tip has no calculator result. Policy: do not estimate. Stop.",
   });
   return steps;
 }
@@ -214,7 +214,7 @@ function buildRoom(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "plan",
       title: "Plan",
-      body: "1. Confirm you are free tomorrow at 14:00.\n2. List rooms that seat 4 and have a whiteboard.\n3. Reserve the first match.",
+      body: "1. Confirm 14:00 on the calendar.\n2. List rooms that seat 4 and have a whiteboard.\n3. Reserve the first legal match. A conflict replans. A denial escalates.",
     });
   }
 
@@ -227,7 +227,7 @@ function buildRoom(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "Last run already found that the West room works. I'll confirm the calendar, then book West directly.",
+      body: "Store hit: West meets seats and whiteboard. Confirm the calendar, then reserve West. Do not rediscover East.",
     });
     steps.push({
       kind: "action",
@@ -266,7 +266,7 @@ function buildRoom(config: RunConfig, recalled: string[]): StepDraft[] {
   steps.push({
     kind: "thought",
     title: "Thought",
-    body: "Before I hold a room I should confirm the calendar slot, then filter rooms by seats and whiteboard.",
+      body: "Reserve is a write. Read the calendar and the room list first. Do not hold a room that fails a constraint.",
   });
   steps.push({
     kind: "action",
@@ -299,7 +299,7 @@ function buildRoom(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "replan",
       title: "Replan",
-      body: "East was the obvious first pick and it failed. North violates both constraints. Book West instead of retrying East.",
+      body: "Failure class: conflict. East matches and is held. North fails seats and whiteboard. Do not retry East. Replan to West.",
     });
   } else {
     steps.push({
@@ -311,7 +311,7 @@ function buildRoom(config: RunConfig, recalled: string[]): StepDraft[] {
     steps.push({
       kind: "thought",
       title: "Thought",
-      body: "East is the smaller match and it's free. I'll take it.",
+      body: "East meets seats and whiteboard and it is free. Reserve it. West stays unused.",
     });
   }
 
@@ -387,12 +387,12 @@ export function runAgent(
     drafts.push({
       kind: "thought",
       title: "Thought",
-      body: `This goal needs ${mission.required.join(" and ")}. Guessing would make me a chatbot again.`,
+      body: `Required tools are not all bound: ${mission.required.join(" and ")}. The answer edge stays closed.`,
     });
     drafts.push({
       kind: "error",
       title: "Blocked",
-      body: `Missing tool${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}. Attach ${missing.length > 1 ? "them" : "it"} and run again.`,
+      body: `Contract broken. Missing tool${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}. Stop. Do not fill the gap from memory of the world.`,
     });
   } else if (missionId === "tokyo-weekend") {
     drafts.push(...buildTokyo(config, recalled));

@@ -15,21 +15,22 @@ export default function BuildIndexPage() {
           Developer track
         </p>
         <h1 className="font-heading mt-3 text-4xl leading-tight tracking-tight sm:text-5xl">
-          LangChain and LangGraph, as you would ship them.
+          The graph you would put in CI.
         </h1>
         <p className="mt-4 text-base leading-7 text-muted-foreground">
-          Ten Python lessons. Real <code className="font-mono text-foreground">StateGraph</code>,
-          tools, <code className="font-mono text-foreground">create_agent</code>, checkpoints,
-          interrupts, a supervisor, and a CI eval suite. The model is scripted so you can study
-          the graph without an API key. Swap in ChatOpenAI later — the graph does not change.
+          Ten Python lessons for people who already know the loop, tools, and ReAct.
+          You will write the evidence gate, the tool contract, the loop guard, the
+          failure class, the handoff allow-list, and the trajectory eval. The model
+          is scripted so the graph is what you study. Swap in ChatOpenAI later — the
+          edges do not change.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <LinkButton href={`/build/${BUILD_LESSONS[0].slug}`}>
-            Start 01 · Chain vs graph
+            Start 01 · Evidence gate
             <ArrowRight data-icon="inline-end" />
           </LinkButton>
           <LinkButton href="/lesson/loop" variant="outline">
-            Concept studio
+            Design studio
           </LinkButton>
         </div>
       </section>
@@ -48,11 +49,19 @@ export default function BuildIndexPage() {
           <pre className="overflow-x-auto rounded-lg bg-[#14110d] p-4 font-mono text-[13px] leading-6 text-amber-50/90">
             {`cd python
 python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 PYTHONPATH=. python -m agentic_lab list
-PYTHONPATH=. python -m agentic_lab 04
-PYTHONPATH=. python -m pytest`}
+PYTHONPATH=. python -m pytest
+
+# Windows Command Prompt — do not use source
+# cd python
+# python -m venv .venv
+# .venv\\Scripts\\activate
+# pip install -r requirements.txt
+# set PYTHONPATH=.
+# python -m agentic_lab list
+# python -m pytest`}
           </pre>
         </CardContent>
       </Card>

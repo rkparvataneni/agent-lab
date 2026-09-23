@@ -8,6 +8,6 @@ export const TOOL_META: Record<
   calculator: { label: "calculator", hint: "Exact arithmetic" },
   search: { label: "search", hint: "Look up hours, facts, pages" },
   calendar: { label: "calendar", hint: "Check whether a slot is free" },
-  rooms: { label: "rooms", hint: "List or reserve meeting rooms" },
-  notes: { label: "notes", hint: "Write or recall a lasting fact" },
+  rooms: { label: "rooms", hint: "Write. List rooms, or reserve one" },
+  notes: { label: "notes", hint: "Store a fact for a later thread" },
 };

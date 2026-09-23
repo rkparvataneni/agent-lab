@@ -21,15 +21,15 @@ export default function HomePage() {
       <section className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end">
         <div>
           <p className="font-mono text-[11px] tracking-[0.22em] text-primary uppercase">
-            A workshop, not a chat demo
+            Expert track · you already know the vocabulary
           </p>
           <h1 className="font-heading mt-4 max-w-3xl text-5xl leading-[0.95] tracking-tight sm:text-6xl">
-            Learn agentic AI by watching the loop work.
+            Ship agents by owning the control policy.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Concepts in the studio. Real LangChain and LangGraph in the developer
-            track: StateGraph, tools, create_agent, checkpoints, interrupts,
-            multi-agent, and production evals. No API key required.
+            The studio is the design judgment. The Python track is the graph:
+            evidence gates, tool contracts, loop guards, failure classes, handoffs,
+            and trajectory evals. No API key required.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href="/build">
@@ -37,23 +37,23 @@ export default function HomePage() {
               <ArrowRight data-icon="inline-end" />
             </LinkButton>
             <LinkButton href={`/lesson/${nextLesson.slug}`} variant="outline">
-              {completed.length === 0 ? "Concept studio" : allDone ? "Replay concepts" : `Continue · ${nextLesson.title}`}
+              {completed.length === 0 ? "Design studio" : allDone ? "Replay the studio" : `Continue · ${nextLesson.title}`}
             </LinkButton>
           </div>
         </div>
 
         <Card className="bg-card/70">
           <CardHeader>
-            <CardTitle>What you will be able to build</CardTitle>
+            <CardTitle>What you will be able to ship</CardTitle>
             <CardDescription>
-              After this path you should be able to write the loop yourself, attach
-              tools, and debug a trace.
+              After this path you should be able to put a graph in CI and know which
+              edge failed.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-sm leading-6">
-            <p>A chatbot is one completion. An agent is a program around a model.</p>
-            <p>Tools are typed functions you execute. The model only proposes calls.</p>
-            <p>ReAct, memory, and planning are layers on the same cycle.</p>
+            <p>An answer edge that stays closed until the required observation is in state.</p>
+            <p>Tool contracts: side effect, error class, and a retry rule that ignores policy failures.</p>
+            <p>Failure classes, approval before writes, disjoint handoffs, and trajectory evals.</p>
           </CardContent>
         </Card>
       </section>
@@ -131,8 +131,8 @@ export default function HomePage() {
             <div>
               <h2 className="font-heading text-2xl">Developer track</h2>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Ten LangChain / LangGraph files you run with pytest. Graphs, tools,
-                create_agent, memory, HITL, multi-agent, evals.
+                Ten LangGraph files you run with pytest: evidence gates, contracts,
+                loop guards, stores, failure policy, approval, handoffs, trajectory evals.
               </p>
             </div>
           </div>
@@ -152,8 +152,8 @@ export default function HomePage() {
             <div>
               <h2 className="font-heading text-2xl">Playground</h2>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Same runtime, every switch exposed. Change the mission, strip a tool,
-                turn on memory, force a conflict.
+                Same runtime, every switch exposed. Strip a tool, force a conflict,
+                and read which edge closed.
               </p>
             </div>
           </div>

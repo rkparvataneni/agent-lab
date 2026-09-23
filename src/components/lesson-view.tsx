@@ -45,7 +45,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
         <section className="flex flex-col gap-6">
           <div>
             <p className="font-mono text-[11px] tracking-[0.18em] text-primary uppercase">
-              Concept
+              Design
             </p>
             <h2 className="font-heading mt-2 text-3xl leading-tight">
               {lesson.concept.heading}

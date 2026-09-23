@@ -1,7 +1,7 @@
 [project]
 name = "agentic-lab"
 version = "0.2.0"
-description = "Developer track: LangChain and LangGraph patterns for building agents"
+description = "Expert track: control policy, tool contracts, and trajectory evals on LangGraph"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
