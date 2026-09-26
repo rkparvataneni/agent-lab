@@ -19,6 +19,13 @@ export const BUILD_SLUGS = [
   "budget-routing",
   "credentials",
   "trace",
+  "durability",
+  "protocol",
+  "evidence",
+  "judges",
+  "memory-write",
+  "tool-safety",
+  "operate",
 ] as const;
 
 export type BuildSlug = (typeof BUILD_SLUGS)[number];
@@ -55,6 +62,13 @@ export const STUDIO_FOR_BUILD: Record<BuildSlug, string> = {
   "budget-routing": "budget",
   credentials: "credentials",
   trace: "trace",
+  durability: "durability",
+  protocol: "protocol",
+  evidence: "evidence",
+  judges: "judges",
+  "memory-write": "memory-write",
+  "tool-safety": "tool-safety",
+  operate: "operate",
 };
 
 export const BUILD_LESSONS: BuildLesson[] = [
@@ -357,6 +371,111 @@ export const BUILD_LESSONS: BuildLesson[] = [
       "Choose workflow when the next step is known, agent when it is not",
     ],
     why: "“The agent was wrong” is not a debugging report.",
+  },
+  {
+    slug: "durability",
+    number: "21",
+    title: "Crash and resume",
+    file: "l21_durability.py",
+    command: "python -m agentic_lab 21",
+    summary:
+      "The charge committed and the checkpoint did not. Reuse the idempotency key or you charge again.",
+    youWill: [
+      "Return the original receipt when resume reuses the key",
+      "Watch a new key create a second receipt",
+      "Append a reversal without deleting the ledger row",
+    ],
+    why: "The process dying is not evidence that the side effect did not happen.",
+  },
+  {
+    slug: "protocol",
+    number: "22",
+    title: "Protocol violations",
+    file: "l22_protocol.py",
+    command: "python -m agentic_lab 22",
+    summary:
+      "A sliced tool call, an unknown name, a missing field, or the wrong id never reaches the provider.",
+    youWill: [
+      "Refuse finish_reason length with no pretend tool message",
+      "Return a tool message for an unknown name and a missing field",
+      "Drop a tool message whose id does not match",
+    ],
+    why: "The model will violate the protocol. The dispatcher is where that stops.",
+  },
+  {
+    slug: "evidence",
+    number: "23",
+    title: "Conflicting evidence",
+    file: "l23_evidence.py",
+    command: "python -m agentic_lab 23",
+    summary:
+      "Disagreeing observations stay disagreeing. A stale cache entry is a miss. The citation names the right observation.",
+    youWill: [
+      "Refuse when weather says 70% and search says 0%",
+      "Treat a two-hour-old cache as a miss against a 15-minute TTL",
+      "Reject a citation of search for a number that is only in weather",
+    ],
+    why: "A number that appears somewhere in the transcript is not a citation.",
+  },
+  {
+    slug: "judges",
+    number: "24",
+    title: "Judges and schemas",
+    file: "l24_judges.py",
+    command: "python -m agentic_lab 24",
+    summary:
+      "Fluency passes a guess. A grounded judge does not. Structured output is parsed from the model text.",
+    youWill: [
+      "Watch a keyword check and a fluency judge pass a sentence with no tool",
+      "Fail that sentence with a grounded judge",
+      "Reject prose and a string amount, and parse {\"amount_usd\": 14.62}",
+    ],
+    why: "A suite that likes complete sentences will ship a fluent wrong answer.",
+  },
+  {
+    slug: "memory-write",
+    number: "25",
+    title: "Memory write policy",
+    file: "l25_memory_write.py",
+    command: "python -m agentic_lab 25",
+    summary:
+      "Store a user field or a tool field. A summary that invents a preference is evidence on the next turn.",
+    youWill: [
+      "Admit “prefers West” and a forecast field",
+      "Reject a transcript dump and an invented summary",
+      "See the poisoned store come back as the next observation",
+    ],
+    why: "The store does not know which writes were lies. You do.",
+  },
+  {
+    slug: "tool-safety",
+    number: "26",
+    title: "Unsafe tools",
+    file: "l26_tool_safety.py",
+    command: "python -m agentic_lab 26",
+    summary:
+      "Deny the metadata address, a path that leaves the root, and a secret in the arguments. The allow-list stays.",
+    youWill: [
+      "Deny 169.254.169.254, localhost, private networks, and file URLs",
+      "Deny ../../etc/passwd and allow a child of the root",
+      "Deny arguments that contain the secret",
+    ],
+    why: "An allow-list decides which tool may run. It does not decide which argument is safe.",
+  },
+  {
+    slug: "operate",
+    number: "27",
+    title: "Cost, redaction, rollback",
+    file: "l27_operate.py",
+    command: "python -m agentic_lab 27",
+    summary:
+      "Price the spans, redact the secret, blame the slow tool, and serve the previous graph.",
+    youWill: [
+      "Sum input and output tokens into a cost",
+      "Redact sk- before the span is stored",
+      "Blame a 900ms tool against a 500ms budget and roll v3 back to v2",
+    ],
+    why: "A span name without a price, a secret, or a rollback is not an operable trace.",
   },
 ];
 

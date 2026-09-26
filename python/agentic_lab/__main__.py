@@ -25,7 +25,7 @@ def main() -> None:
         "lesson",
         nargs="?",
         default="list",
-        help="lesson number (01-20), slug, 'list', or 'all'",
+        help="lesson number (01-27), slug, 'list', or 'all'",
     )
     args = parser.parse_args()
     token = str(args.lesson).lower()

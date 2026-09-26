@@ -19,6 +19,13 @@ from . import (
     l18_budget_routing,
     l19_credentials,
     l20_trace,
+    l21_durability,
+    l22_protocol,
+    l23_evidence,
+    l24_judges,
+    l25_memory_write,
+    l26_tool_safety,
+    l27_operate,
 )
 
 LESSONS = [
@@ -42,4 +49,11 @@ LESSONS = [
     l18_budget_routing,
     l19_credentials,
     l20_trace,
+    l21_durability,
+    l22_protocol,
+    l23_evidence,
+    l24_judges,
+    l25_memory_write,
+    l26_tool_safety,
+    l27_operate,
 ]

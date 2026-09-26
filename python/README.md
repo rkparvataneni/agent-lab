@@ -1,6 +1,6 @@
 # Agentic Lab — expert course
 
-You already know what an agent loop, a tool, and ReAct are. These twenty modules are the loop written by hand, then the failures a real model adds: uncited numbers, sampling controls, rate limits, a full context window, and instructions hiding in tool output. The graph lessons are the policy you put around that loop.
+You already know what an agent loop, a tool, and ReAct are. These twenty-seven modules are the loop written by hand, then the failures a real model adds: uncited numbers, sampling controls, rate limits, a full context window, instructions hiding in tool output, a crash between the side effect and the checkpoint, a tool call that violates the protocol, evidence that disagrees, a judge that likes fluent prose, a store that remembers a lie, an argument that should never reach the provider, and a trace you can price and roll back. The graph lessons are the policy you put around that loop.
 
 The chat model is scripted (`agentic_lab/llm.py`). It speaks the real tool-call protocol. When you have a key, replace `ScriptedChatModel` with `ChatOpenAI` or `ChatAnthropic`. Do not rewrite the edges.
 
@@ -65,6 +65,13 @@ python -m pytest
 | 18 | Budgets and routing | Small model routes. An estimate that does not fit is not sent |
 | 19 | Credentials | The token is attached by the runtime. A wider scope is denied |
 | 20 | A trace you can defend | Name the failed span. Known steps are a workflow |
+| 21 | Crash and resume | Reuse the idempotency key. A new key is a second charge |
+| 22 | Protocol violations | length, unknown tools, and a mismatched id are not executed |
+| 23 | Conflicting evidence | Disagreeing tools stay disagreeing. A stale cache is a miss |
+| 24 | Judges and schemas | Fluency passes a guess. Parse the amount from model text |
+| 25 | Memory write policy | A summary is not an observation. A stored lie comes back |
+| 26 | Unsafe tools | Deny the metadata URL, a path escape, and a secret in the args |
+| 27 | Cost, redaction, rollback | Price the spans, redact sk-, blame the slow tool, serve the previous graph |
 
 ## How the pieces fit
 

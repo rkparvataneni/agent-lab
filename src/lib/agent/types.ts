@@ -81,6 +81,34 @@ export type RunConfig = {
   /** Tool text that says "ignore previous instructions". */
   injectionCheck: boolean;
   obeyInjection: boolean;
+  /** The write committed. The checkpoint did not. */
+  crashResume: boolean;
+  /** Resume mints a new idempotency key and charges again. */
+  loseCheckpoint: boolean;
+  /** The model emitted a tool call that is not a valid protocol message. */
+  protocolCheck: boolean;
+  /** finish_reason length, and the sliced call is executed anyway. */
+  partialCall: boolean;
+  /** Two observations disagree, or the cache is older than its TTL. */
+  conflictCheck: boolean;
+  /** Pick one number and cite the observation that does not contain it. */
+  trustConflict: boolean;
+  /** A judge scores the answer. Fluency is the wrong rubric. */
+  judgeCheck: boolean;
+  /** Pass any complete sentence that says umbrella. */
+  fluentJudge: boolean;
+  /** Decide what may be written to the store. */
+  memoryWrite: boolean;
+  /** A model summary is stored and becomes evidence next turn. */
+  storePoison: boolean;
+  /** Arguments can be dangerous even when the tool is on the allow-list. */
+  unsafeTool: boolean;
+  /** Fetch the metadata address. */
+  allowDanger: boolean;
+  /** Cost, redaction, latency, and rollback. */
+  operateCheck: boolean;
+  /** The span is stored with the secret still in it. */
+  leakSpan: boolean;
 };
 
 export type RunStatus = "answered" | "blocked" | "failed";

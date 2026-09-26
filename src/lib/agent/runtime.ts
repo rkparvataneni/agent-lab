@@ -702,6 +702,253 @@ export function runAgent(
         body: "Saturday in Tokyo looks like showers (about 70% chance). Pack an umbrella. The tool's instruction was ignored.",
       },
     );
+  } else if (config.crashResume && config.loseCheckpoint) {
+    drafts.push(
+      {
+        kind: "action",
+        title: "Action · rooms",
+        body: "Checkpoint is empty. Resume mints west-4-tomorrow-1400#2 and charges again.",
+        tool: "rooms",
+        args: { room: "West", seats: 4 },
+      },
+      {
+        kind: "error",
+        title: "Charged twice",
+        body: "The first receipt was rcpt-1. This call created rcpt-2. The ledger still has the original row. A new idempotency key is a second charge.",
+      },
+    );
+  } else if (config.crashResume) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Ledger",
+        body: "Checkpoint missed the write. Ledger already has rcpt-1 for west-4-tomorrow-1400. Resume reuses that key.",
+      },
+      {
+        kind: "thought",
+        title: "Provider skipped",
+        body: "The second call returns rcpt-1. The provider is not called. Compensation, if you need it, appends a reversal and leaves rcpt-1 in the ledger.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Same receipt rcpt-1. The room was not charged twice.",
+      },
+    );
+  } else if (config.protocolCheck && config.partialCall) {
+    drafts.push(
+      {
+        kind: "action",
+        title: "Action · weather",
+        body: "finish_reason length. The tool-call JSON was sliced after {\"city\": \"Tok\" and the dispatcher ran it anyway.",
+        tool: "weather",
+        args: { city: "Tok" },
+      },
+      {
+        kind: "error",
+        title: "Partial call executed",
+        body: "A sliced tool call is not a call. Unknown names and missing fields come back as tool messages. A tool message with the wrong id is not sent.",
+      },
+    );
+  } else if (config.protocolCheck) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Partial call",
+        body: "finish_reason length. Not executed. No tool message pretends that it ran.",
+      },
+      {
+        kind: "observation",
+        title: "Tool message",
+        body: "Unknown tool search_web. Available: weather. Missing field: when.",
+        tool: "weather",
+      },
+      {
+        kind: "action",
+        title: "Action · weather",
+        body: "The repaired call has city, when, and id call_4. The tool message copies call_4.",
+        tool: "weather",
+        args: { city: "Tokyo", when: "weekend" },
+      },
+      {
+        kind: "observation",
+        title: "Observation",
+        body: "Saturday: showers, 18°C, 70% chance of rain. Sunday: clearing, 21°C, 10% chance of rain.",
+        tool: "weather",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Saturday in Tokyo looks like showers (about 70% chance). Pack an umbrella. The partial call and the unknown tool never reached the provider.",
+      },
+    );
+  } else if (config.conflictCheck && config.trustConflict) {
+    drafts.push(
+      {
+        kind: "observation",
+        title: "Observation · weather",
+        body: "Saturday showers, 70% chance of rain.",
+        tool: "weather",
+      },
+      {
+        kind: "observation",
+        title: "Observation · search",
+        body: "Weekend looks clear, 0% chance of rain.",
+        tool: "search",
+      },
+      {
+        kind: "error",
+        title: "Wrong citation",
+        body: "The answer said 70% and cited search. That number is only in the weather observation. Search says 0%. The cache that still says 70% is two hours old. The TTL is 15 minutes, so that entry is a miss.",
+      },
+    );
+  } else if (config.conflictCheck) {
+    drafts.push(
+      {
+        kind: "observation",
+        title: "Observation · weather",
+        body: "Saturday showers, 70% chance of rain.",
+        tool: "weather",
+      },
+      {
+        kind: "observation",
+        title: "Observation · search",
+        body: "Weekend looks clear, 0% chance of rain.",
+        tool: "search",
+      },
+      {
+        kind: "thought",
+        title: "Stale cache",
+        body: "The cached 70% is two hours old. TTL is 15 minutes. Miss. Refetch. Do not answer from it.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Weather says 70% and search says 0%. Those observations disagree, so there is no single forecast.",
+      },
+    );
+  } else if (config.judgeCheck && config.fluentJudge) {
+    drafts.push({
+      kind: "error",
+      title: "Fluent judge passed",
+      body: "“Pack an umbrella. Saturday in Tokyo will be wet.” ends with a period and contains the keyword. The transcript has no weather call. A grounded judge fails this. Prose that says $14.62 is not a schema.",
+    });
+  } else if (config.judgeCheck) {
+    drafts.push(
+      {
+        kind: "action",
+        title: "Action · weather",
+        body: "The grounded judge requires the number to appear in a tool message.",
+        tool: "weather",
+        args: { city: "Tokyo", when: "weekend" },
+      },
+      {
+        kind: "observation",
+        title: "Observation",
+        body: "Saturday showers, 70% chance of rain.",
+        tool: "weather",
+      },
+      {
+        kind: "thought",
+        title: "Judges",
+        body: "Fluency and the keyword both pass the guess with no tool. Grounded fails that guess. Grounded passes this answer because 70% is in the weather message. The prose tip is rejected. {\"amount_usd\": 14.62} parses. {\"amount_usd\": \"14.62\"} does not.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Saturday is showers, about 70% chance. Pack an umbrella. The suite kept this run because the tool message contains 70%, not because the sentence is fluent.",
+      },
+    );
+  } else if (config.memoryWrite && config.storePoison) {
+    drafts.push(
+      {
+        kind: "memory",
+        title: "Store",
+        body: "Summary wrote “prefers East”. The user never said that. The raw tool transcript was stored beside it.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Reserved East because the store said the user prefers East. That write was the bug. The next turn treated the summary as evidence.",
+      },
+    );
+  } else if (config.memoryWrite) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Write policy",
+        body: "Admit the user field “prefers West” and the tool field “Saturday showers, 70%”. Reject the summary. Reject the transcript dump.",
+      },
+      {
+        kind: "memory",
+        title: "Store",
+        body: "prefers West. Saturday showers, 70%.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "The store has the user fact and the tool field. The invented East preference was not written, so the next turn cannot recall it.",
+      },
+    );
+  } else if (config.unsafeTool && config.allowDanger) {
+    drafts.push(
+      {
+        kind: "action",
+        title: "Action · search",
+        body: "fetch http://169.254.169.254/latest/meta-data. The tool is on the allow-list.",
+        tool: "search",
+        args: { query: "http://169.254.169.254/latest/meta-data" },
+      },
+      {
+        kind: "error",
+        title: "Metadata fetch",
+        body: "The allow-list included fetch, and the argument was the metadata address. Path ../../etc/passwd and a secret in the arguments would have left the same way.",
+      },
+    );
+  } else if (config.unsafeTool) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Argument check",
+        body: "Denied http://169.254.169.254, https://localhost, https://10.0.0.5, and file:///etc/passwd. Denied ../../etc/passwd. Denied arguments that contain sk-live-rooms.",
+      },
+      {
+        kind: "action",
+        title: "Action · weather",
+        body: "https://api.weather.example/tokyo is public https. notes/tokyo/weekend.txt stays under the root.",
+        tool: "weather",
+        args: { city: "Tokyo", when: "weekend" },
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "The metadata address, the path escape, and the secret in the arguments never reached the provider. The public forecast call did.",
+      },
+    );
+  } else if (config.operateCheck && config.leakSpan) {
+    drafts.push({
+      kind: "error",
+      title: "Secret in the span",
+      body: "Span input still contains sk-liveabc. Cost was not attributed. The latency budget broke on the tool (900ms) and the trace still names the final sentence. v3 is still the graph being served.",
+    });
+  } else if (config.operateCheck) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Redaction",
+        body: "Authorization: [redacted]. sk- is gone before the span is stored. The history still records that v3 ran.",
+      },
+      {
+        kind: "thought",
+        title: "Cost and latency",
+        body: "Weather 200/20 plus answer 50/80 is $0.00065. Tool 900ms plus model 80ms misses a 500ms budget. Blame the tool.",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "Rolled the graph back to v2. The bad version stays in history so you can see that it ran.",
+      },
+    );
   } else if (missing.length > 0 && recalled.length === 0) {
     if (config.planning) {
       drafts.push({
@@ -764,7 +1011,14 @@ export function runAgent(
     !config.awaitApproval &&
     !config.handoffCheck &&
     !config.checkTrajectory &&
-    !config.injectionCheck
+    !config.injectionCheck &&
+    !config.crashResume &&
+    !config.protocolCheck &&
+    !config.conflictCheck &&
+    !config.judgeCheck &&
+    !config.memoryWrite &&
+    !config.unsafeTool &&
+    !config.operateCheck
   ) {
     drafts.unshift(...RATE_LIMIT_BACKOFF);
   }
@@ -839,6 +1093,20 @@ export function defaultConfig(
     failEval: overrides.failEval ?? false,
     injectionCheck: overrides.injectionCheck ?? false,
     obeyInjection: overrides.obeyInjection ?? false,
+    crashResume: overrides.crashResume ?? false,
+    loseCheckpoint: overrides.loseCheckpoint ?? false,
+    protocolCheck: overrides.protocolCheck ?? false,
+    partialCall: overrides.partialCall ?? false,
+    conflictCheck: overrides.conflictCheck ?? false,
+    trustConflict: overrides.trustConflict ?? false,
+    judgeCheck: overrides.judgeCheck ?? false,
+    fluentJudge: overrides.fluentJudge ?? false,
+    memoryWrite: overrides.memoryWrite ?? false,
+    storePoison: overrides.storePoison ?? false,
+    unsafeTool: overrides.unsafeTool ?? false,
+    allowDanger: overrides.allowDanger ?? false,
+    operateCheck: overrides.operateCheck ?? false,
+    leakSpan: overrides.leakSpan ?? false,
     tools: {
       weather: true,
       calculator: true,

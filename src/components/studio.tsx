@@ -50,6 +50,20 @@ function configFromDemo(demo: LessonDemo): RunConfig {
     failEval: demo.defaultFailEval ?? false,
     injectionCheck: demo.injectionCheck ?? false,
     obeyInjection: demo.defaultObeyInjection ?? false,
+    crashResume: demo.crashResume ?? false,
+    loseCheckpoint: demo.defaultLoseCheckpoint ?? false,
+    protocolCheck: demo.protocolCheck ?? false,
+    partialCall: demo.defaultPartialCall ?? false,
+    conflictCheck: demo.conflictCheck ?? false,
+    trustConflict: demo.defaultTrustConflict ?? false,
+    judgeCheck: demo.judgeCheck ?? false,
+    fluentJudge: demo.defaultFluentJudge ?? false,
+    memoryWrite: demo.memoryWrite ?? false,
+    storePoison: demo.defaultStorePoison ?? false,
+    unsafeTool: demo.unsafeTool ?? false,
+    allowDanger: demo.defaultAllowDanger ?? false,
+    operateCheck: demo.operateCheck ?? false,
+    leakSpan: demo.defaultLeakSpan ?? false,
     tools: demo.defaultTools,
   });
 }
@@ -83,6 +97,13 @@ export function Studio({
   const [widenHandoff, setWidenHandoff] = useState(demo.defaultWidenHandoff ?? false);
   const [failEval, setFailEval] = useState(demo.defaultFailEval ?? false);
   const [obeyInjection, setObeyInjection] = useState(demo.defaultObeyInjection ?? false);
+  const [loseCheckpoint, setLoseCheckpoint] = useState(demo.defaultLoseCheckpoint ?? false);
+  const [partialCall, setPartialCall] = useState(demo.defaultPartialCall ?? false);
+  const [trustConflict, setTrustConflict] = useState(demo.defaultTrustConflict ?? false);
+  const [fluentJudge, setFluentJudge] = useState(demo.defaultFluentJudge ?? false);
+  const [storePoison, setStorePoison] = useState(demo.defaultStorePoison ?? false);
+  const [allowDanger, setAllowDanger] = useState(demo.defaultAllowDanger ?? false);
+  const [leakSpan, setLeakSpan] = useState(demo.defaultLeakSpan ?? false);
   const [notes, setNotes] = useState<string[]>([]);
   const [run, setRun] = useState<AgentRun | null>(null);
   const [visible, setVisible] = useState(0);
@@ -135,6 +156,20 @@ export function Studio({
         failEval,
         injectionCheck: demo.injectionCheck ?? false,
         obeyInjection,
+        crashResume: demo.crashResume ?? false,
+        loseCheckpoint,
+        protocolCheck: demo.protocolCheck ?? false,
+        partialCall,
+        conflictCheck: demo.conflictCheck ?? false,
+        trustConflict,
+        judgeCheck: demo.judgeCheck ?? false,
+        fluentJudge,
+        memoryWrite: demo.memoryWrite ?? false,
+        storePoison,
+        unsafeTool: demo.unsafeTool ?? false,
+        allowDanger,
+        operateCheck: demo.operateCheck ?? false,
+        leakSpan,
       },
       notes,
     );
@@ -248,7 +283,14 @@ export function Studio({
       demo.showApprovalToggle ||
       demo.showHandoffToggle ||
       demo.showEvalToggle ||
-      demo.showInjectionToggle ? (
+      demo.showInjectionToggle ||
+      demo.showCrashToggle ||
+      demo.showProtocolToggle ||
+      demo.showConflictToggle ||
+      demo.showJudgeToggle ||
+      demo.showPoisonToggle ||
+      demo.showUnsafeToggle ||
+      demo.showOperateToggle ? (
         <div className="grid gap-3 md:grid-cols-2">
           {demo.allowToolToggle ? (
             <Card>
@@ -427,7 +469,14 @@ export function Studio({
           demo.showApprovalToggle ||
           demo.showHandoffToggle ||
           demo.showEvalToggle ||
-          demo.showInjectionToggle ? (
+          demo.showInjectionToggle ||
+          demo.showCrashToggle ||
+          demo.showProtocolToggle ||
+          demo.showConflictToggle ||
+          demo.showJudgeToggle ||
+          demo.showPoisonToggle ||
+          demo.showUnsafeToggle ||
+          demo.showOperateToggle ? (
             <Card>
               <CardHeader>
                 <CardTitle>Design studio</CardTitle>
@@ -479,6 +528,62 @@ export function Studio({
                     hint="Off: East stays unreserved. On: that is the bug."
                     checked={obeyInjection}
                     onCheckedChange={setObeyInjection}
+                  />
+                ) : null}
+                {demo.showCrashToggle ? (
+                  <ToggleRow
+                    label="Resume without the ledger"
+                    hint="On: a new key charges again. Off: the same receipt, provider skipped."
+                    checked={loseCheckpoint}
+                    onCheckedChange={setLoseCheckpoint}
+                  />
+                ) : null}
+                {demo.showProtocolToggle ? (
+                  <ToggleRow
+                    label="Execute a partial tool call"
+                    hint="On: sliced JSON runs. Off: refuse it and repair the schema."
+                    checked={partialCall}
+                    onCheckedChange={setPartialCall}
+                  />
+                ) : null}
+                {demo.showConflictToggle ? (
+                  <ToggleRow
+                    label="Pick one side of the conflict"
+                    hint="On: cite search for 70%. Off: the observations disagree."
+                    checked={trustConflict}
+                    onCheckedChange={setTrustConflict}
+                  />
+                ) : null}
+                {demo.showJudgeToggle ? (
+                  <ToggleRow
+                    label="Grade the sentence"
+                    hint="On: fluency passes a guess. Off: the tool message has to contain 70%."
+                    checked={fluentJudge}
+                    onCheckedChange={setFluentJudge}
+                  />
+                ) : null}
+                {demo.showPoisonToggle ? (
+                  <ToggleRow
+                    label="Store the summary"
+                    hint="On: an invented East preference becomes evidence. Off: only fields you chose."
+                    checked={storePoison}
+                    onCheckedChange={setStorePoison}
+                  />
+                ) : null}
+                {demo.showUnsafeToggle ? (
+                  <ToggleRow
+                    label="Allow the metadata URL"
+                    hint="On: the allow-list is not an argument check. Off: deny it before the call."
+                    checked={allowDanger}
+                    onCheckedChange={setAllowDanger}
+                  />
+                ) : null}
+                {demo.showOperateToggle ? (
+                  <ToggleRow
+                    label="Leave the secret in the span"
+                    hint="On: sk-live stays in the trace. Off: redact, price the spans, roll back."
+                    checked={leakSpan}
+                    onCheckedChange={setLeakSpan}
                   />
                 ) : null}
               </CardContent>

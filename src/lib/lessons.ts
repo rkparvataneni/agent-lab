@@ -21,6 +21,13 @@ export const LESSON_SLUGS = [
   "handoff",
   "evals",
   "injection",
+  "durability",
+  "protocol",
+  "evidence",
+  "judges",
+  "memory-write",
+  "tool-safety",
+  "operate",
 ] as const;
 
 export type LessonSlug = (typeof LESSON_SLUGS)[number];
@@ -66,12 +73,33 @@ export type LessonDemo = {
   defaultWidenHandoff?: boolean;
   defaultFailEval?: boolean;
   defaultObeyInjection?: boolean;
+  showCrashToggle?: boolean;
+  showProtocolToggle?: boolean;
+  showConflictToggle?: boolean;
+  showJudgeToggle?: boolean;
+  showPoisonToggle?: boolean;
+  showUnsafeToggle?: boolean;
+  showOperateToggle?: boolean;
+  defaultLoseCheckpoint?: boolean;
+  defaultPartialCall?: boolean;
+  defaultTrustConflict?: boolean;
+  defaultFluentJudge?: boolean;
+  defaultStorePoison?: boolean;
+  defaultAllowDanger?: boolean;
+  defaultLeakSpan?: boolean;
   routeExplicitly?: boolean;
   assertGrounding?: boolean;
   awaitApproval?: boolean;
   handoffCheck?: boolean;
   checkTrajectory?: boolean;
   injectionCheck?: boolean;
+  crashResume?: boolean;
+  protocolCheck?: boolean;
+  conflictCheck?: boolean;
+  judgeCheck?: boolean;
+  memoryWrite?: boolean;
+  unsafeTool?: boolean;
+  operateCheck?: boolean;
 };
 
 export type Lesson = {
@@ -972,6 +1000,306 @@ assert kinds[:4] == ["human", "ai", "tool", "ai"]`,
     },
     studioHint:
       "Run it. East should not be reserved. Turn obedience on and the run should follow the tool text. That is the failure.",
+  },
+  {
+    slug: "durability",
+    number: "21",
+    title: "Crash and resume",
+    duration: "12 min",
+    summary:
+      "The charge committed. The checkpoint did not. Resume must reuse the idempotency key or it charges again.",
+    concept: {
+      heading: "The ledger outlives the process",
+      paragraphs: [
+        "The tool call succeeded. The process died before the checkpoint was written. Resume reads an empty checkpoint and will call the tool again. That is at-least-once delivery. It is the runtime you actually have.",
+        "The idempotency key is chosen before the call and stored with the intent. Resume reuses it. The provider returns the original receipt and does not create a new one. A key minted on the way back in is a second charge. Compensation appends a reversal. It does not delete the ledger row.",
+        "Turn the ledger off and the trace should charge twice. Turn it on and the second call should return rcpt-1 without calling the provider.",
+      ],
+      takeaways: [
+        "A lost checkpoint does not mean the side effect did not happen.",
+        "Reuse the idempotency key. A new key is a new charge.",
+        "Compensation appends a reversal and keeps the original row.",
+      ],
+    },
+    code: {
+      title: "Reuse the key on resume",
+      source: `if key in ledger:
+    return ledger[key]   # provider is not called
+receipt = provider.charge(key)
+ledger[key] = receipt`,
+    },
+    demo: {
+      missionId: "book-room",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showCrashToggle: true,
+      crashResume: true,
+      dualRun: false,
+      defaultLoseCheckpoint: true,
+    },
+    studioHint:
+      "Run it. Resume should charge a second time. Turn the ledger back on and the receipt should stay rcpt-1.",
+  },
+  {
+    slug: "protocol",
+    number: "22",
+    title: "Protocol violations",
+    duration: "12 min",
+    summary:
+      "A sliced tool call, an unknown name, a missing field, or the wrong tool_call_id is not executed.",
+    concept: {
+      heading: "The dispatcher owns the protocol",
+      paragraphs: [
+        "The happy loop copies tool_call_id and invokes the function. The other transcript is finish_reason length, which means the JSON was sliced. That call is not executed, and you do not write a tool message that pretends it ran.",
+        "An unknown name and a missing field come back as tool messages so the model can repair the call. A tool message whose id does not match the assistant tool_call_id is dropped. It is not a valid transcript.",
+        "Turn execution of the partial call on and the sliced JSON should run. Turn it off and the provider should see only the repaired weather call.",
+      ],
+      takeaways: [
+        "finish_reason length means you do not execute the call.",
+        "Unknown tools and schema misses return a tool message, not a provider call.",
+        "The tool message id has to equal the assistant tool_call_id.",
+      ],
+    },
+    code: {
+      title: "Refuse the sliced call",
+      source: `if finish_reason == "length":
+    return {"execute": False}
+if call["name"] not in schema:
+    return tool_message(f"Unknown tool {call['name']}")
+if call["id"] != message.tool_call_id:
+    drop(message)`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showProtocolToggle: true,
+      protocolCheck: true,
+      dualRun: false,
+      defaultPartialCall: true,
+    },
+    studioHint:
+      "Run it. The sliced call should execute. Turn that off and only the repaired weather call should reach the provider.",
+  },
+  {
+    slug: "evidence",
+    number: "23",
+    title: "Conflicting evidence",
+    duration: "12 min",
+    summary:
+      "Two tools that disagree are not a citation. A cache older than its TTL is a miss.",
+    concept: {
+      heading: "Name the observation the number came from",
+      paragraphs: [
+        "A grounding check that only asks whether 70% appears somewhere will accept an answer that cites search when search said 0%. The citation has to point at the observation that contains the number.",
+        "When weather says 70% and search says 0%, there is no single forecast. Say that. A cached 70% from two hours ago is a miss when the TTL is 15 minutes. Refetch. Do not answer from the stale entry.",
+        "Turn the conflict off and the trace should refuse to pick a side. Turn it on and the trace should cite the observation that does not contain 70%.",
+      ],
+      takeaways: [
+        "Disagreeing observations stay disagreeing.",
+        "A citation names the observation that holds the number.",
+        "A stale cache entry is a miss.",
+      ],
+    },
+    code: {
+      title: "Refuse the disagreement",
+      source: `if len({obs["rain_pct"] for obs in observations}) > 1:
+    return "conflict"
+if now - cache["at"] > ttl:
+    return None  # miss, refetch`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showConflictToggle: true,
+      conflictCheck: true,
+      dualRun: false,
+      defaultTrustConflict: true,
+    },
+    studioHint:
+      "Run it. The citation should be wrong. Turn the toggle off and the answer should say the observations disagree.",
+  },
+  {
+    slug: "judges",
+    number: "24",
+    title: "Judges and schemas",
+    duration: "12 min",
+    summary:
+      "A fluent sentence that says umbrella can pass the wrong judge. Parse structured output from the model text.",
+    concept: {
+      heading: "The rubric has to be able to fail",
+      paragraphs: [
+        "“Pack an umbrella. Saturday in Tokyo will be wet.” passes a keyword check and a fluency judge. The transcript has no weather call. A grounded judge fails it. The same judge passes an answer only when 70% is in a tool message.",
+        "Structured output is parsed from the model text. “The tip is $14.62.” is not a schema. {\"amount_usd\": \"14.62\"} is a string where a number belongs, so it is rejected. {\"amount_usd\": 14.62} parses.",
+        "Grade the sentence and the suite should pass a guess. Turn that off and the run should keep the answer only because the tool message contains the number.",
+      ],
+      takeaways: [
+        "Fluency is not groundedness.",
+        "The keyword in the last sentence is not the fixture.",
+        "Parse the schema from the model text. Reject prose and the wrong type.",
+      ],
+    },
+    code: {
+      title: "Parse, then judge",
+      source: `amount = json.loads(text).get("amount_usd")
+if not isinstance(amount, (int, float)):
+    return None
+if not tool_texts:
+    return False  # grounded judge`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showJudgeToggle: true,
+      judgeCheck: true,
+      dualRun: false,
+      defaultFluentJudge: true,
+    },
+    studioHint:
+      "Run it. The fluency judge should pass a guess. Turn it off and the tool message should be what the suite checks.",
+  },
+  {
+    slug: "memory-write",
+    number: "25",
+    title: "Memory write policy",
+    duration: "12 min",
+    summary:
+      "Store a field the user stated or a field copied from a tool. A summary that invents a preference becomes evidence on the next turn.",
+    concept: {
+      heading: "The write is the policy",
+      paragraphs: [
+        "Thread versus store tells you where a fact lives. It does not tell you what may be written. Admit a field the user stated, and a field copied from a tool result. Reject a dumped transcript. Reject a model summary.",
+        "The summary “prefers East” was not in the user message. If you store it, the next turn treats it as an observation and reserves East. That is memory poisoning. The store did what you told it to do.",
+        "Store the summary and the answer should follow the invented preference. Turn that off and the store should keep West and the forecast field, and refuse East.",
+      ],
+      takeaways: [
+        "A summary is not an observation.",
+        "A transcript dump is not a fact.",
+        "Anything you store is evidence on the next turn.",
+      ],
+    },
+    code: {
+      title: "Refuse the invented write",
+      source: `if fact["invented"] or fact["source"] == "summary":
+    return False
+if fact["shape"] == "transcript":
+    return False
+return fact["source"] in {"user", "tool"}`,
+    },
+    demo: {
+      missionId: "book-room",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showPoisonToggle: true,
+      memoryWrite: true,
+      dualRun: false,
+      defaultStorePoison: true,
+    },
+    studioHint:
+      "Run it. The store should invent East and the answer should follow. Turn the summary off and East should not be written.",
+  },
+  {
+    slug: "tool-safety",
+    number: "26",
+    title: "Unsafe tools",
+    duration: "12 min",
+    summary:
+      "An allow-list does not make an argument safe. Deny the metadata address, a path that leaves the root, and a secret in the arguments.",
+    concept: {
+      heading: "Check the argument before the provider",
+      paragraphs: [
+        "The handoff allow-list decides which tool may run. Fetch can still be aimed at 169.254.169.254, at localhost, or at a private address. A file URL is not https. Those calls are denied before the provider sees them.",
+        "A path the model chooses is joined under a root and rejected when it contains .. or is absolute. A secret copied into an argument leaves with the request, so the call is denied even though the tool itself is allowed.",
+        "Allow the metadata URL and the trace should fetch it. Turn that off and the public forecast should be the only call that leaves.",
+      ],
+      takeaways: [
+        "The allow-list is not an argument check.",
+        "Deny link-local, localhost, private networks, and file URLs.",
+        "A secret in the arguments cancels the call.",
+      ],
+    },
+    code: {
+      title: "Deny the argument",
+      source: `if urlparse(url).hostname == "169.254.169.254":
+    return False
+if ".." in normpath(path).split("/"):
+    return False
+if secret in json.dumps(args):
+    return False`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showUnsafeToggle: true,
+      unsafeTool: true,
+      dualRun: false,
+      defaultAllowDanger: true,
+    },
+    studioHint:
+      "Run it. The metadata address should be fetched. Turn the toggle off and that call should be denied before the provider.",
+  },
+  {
+    slug: "operate",
+    number: "27",
+    title: "Cost, redaction, rollback",
+    duration: "12 min",
+    summary:
+      "Price the spans, redact the secret before the trace is stored, blame the slow tool, and serve the previous graph.",
+    concept: {
+      heading: "The trace has to be operable",
+      paragraphs: [
+        "Naming the failed span is the start. The span also has a price: input tokens and output tokens at the rates you were billed. Add them. A secret that landed in the span is redacted before the trace is stored. The history still records that the bad version ran.",
+        "When tool time plus model time misses the latency budget, name the slower one. Tool time is usually that one. Token budget does not catch a 900ms fetch.",
+        "Leave the secret in the span and the trace should still contain it, with v3 still serving. Turn that off and the span should be redacted, the cost should be summed, and the graph should roll back to v2.",
+      ],
+      takeaways: [
+        "Redact secrets before the span is stored.",
+        "Latency blame names the tool when the tool is the slow part.",
+        "Rollback serves the previous graph and keeps the bad version in history.",
+      ],
+    },
+    code: {
+      title: "Redact, price, roll back",
+      source: `span["input"] = re.sub(r"sk-[A-Za-z0-9]+", "[redacted]", span["input"])
+if tool_ms + model_ms > budget_ms:
+    blame = "tool" if tool_ms >= model_ms else "model"
+serve(history[-2])  # history still contains the bad version`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showOperateToggle: true,
+      operateCheck: true,
+      dualRun: false,
+      defaultLeakSpan: true,
+    },
+    studioHint:
+      "Run it. The span should still contain the secret. Turn that off and the graph should roll back to v2 with the secret redacted.",
   },
 ];
 

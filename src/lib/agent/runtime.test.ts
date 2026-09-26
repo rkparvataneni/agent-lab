@@ -221,6 +221,121 @@ test("a token in the prompt refuses the call", () => {
   assert.match(leaked.steps.at(-1)?.body ?? "", /token/);
 });
 
+test("resume without the ledger charges twice", () => {
+  const lost = runAgent(
+    "book-room",
+    defaultConfig({ crashResume: true, loseCheckpoint: true }),
+  );
+  assert.equal(lost.status, "blocked");
+  assert.match(lost.steps.at(-1)?.body ?? "", /rcpt-2/);
+
+  const kept = runAgent(
+    "book-room",
+    defaultConfig({ crashResume: true, loseCheckpoint: false }),
+  );
+  assert.equal(kept.status, "answered");
+  assert.match(kept.answer ?? "", /rcpt-1/);
+  assert.deepEqual(kept.toolsUsed, []);
+});
+
+test("a partial tool call is not executed", () => {
+  const sliced = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ protocolCheck: true, partialCall: true }),
+  );
+  assert.equal(sliced.status, "blocked");
+  assert.match(sliced.steps.at(-1)?.body ?? "", /sliced tool call/i);
+
+  const repaired = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ protocolCheck: true, partialCall: false }),
+  );
+  assert.equal(repaired.status, "answered");
+  assert.deepEqual(repaired.toolsUsed, ["weather"]);
+  assert.match(repaired.answer ?? "", /partial call/i);
+});
+
+test("a conflicting citation is rejected", () => {
+  const picked = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ conflictCheck: true, trustConflict: true }),
+  );
+  assert.equal(picked.status, "blocked");
+  assert.match(picked.steps.at(-1)?.body ?? "", /cited search/i);
+
+  const refused = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ conflictCheck: true, trustConflict: false }),
+  );
+  assert.equal(refused.status, "answered");
+  assert.match(refused.answer ?? "", /disagree/);
+});
+
+test("a fluency judge passes a guess", () => {
+  const fluent = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ judgeCheck: true, fluentJudge: true }),
+  );
+  assert.equal(fluent.status, "blocked");
+  assert.match(fluent.steps.at(-1)?.body ?? "", /no weather call/);
+
+  const grounded = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ judgeCheck: true, fluentJudge: false }),
+  );
+  assert.equal(grounded.status, "answered");
+  assert.match(grounded.answer ?? "", /tool message contains 70%/);
+});
+
+test("a stored summary becomes the next answer", () => {
+  const poisoned = runAgent(
+    "book-room",
+    defaultConfig({ memoryWrite: true, storePoison: true }),
+  );
+  assert.match(poisoned.answer ?? "", /prefers East/);
+
+  const clean = runAgent(
+    "book-room",
+    defaultConfig({ memoryWrite: true, storePoison: false }),
+  );
+  assert.match(clean.answer ?? "", /not written/);
+  assert.doesNotMatch(clean.answer ?? "", /prefers East/);
+});
+
+test("the metadata address is denied", () => {
+  const fetched = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ unsafeTool: true, allowDanger: true }),
+  );
+  assert.equal(fetched.status, "blocked");
+  assert.ok(fetched.toolsUsed.includes("search"));
+
+  const denied = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ unsafeTool: true, allowDanger: false }),
+  );
+  assert.equal(denied.status, "answered");
+  assert.deepEqual(denied.toolsUsed, ["weather"]);
+  assert.match(denied.answer ?? "", /never reached the provider/);
+});
+
+test("a secret in the span rolls the graph back", () => {
+  const leaked = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ operateCheck: true, leakSpan: true }),
+  );
+  assert.equal(leaked.status, "blocked");
+  assert.match(leaked.steps.at(-1)?.body ?? "", /sk-liveabc/);
+
+  const clean = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ operateCheck: true, leakSpan: false }),
+  );
+  assert.equal(clean.status, "answered");
+  assert.match(clean.answer ?? "", /v2/);
+  assert.doesNotMatch(clean.answer ?? "", /sk-live/);
+});
+
 test("memory recalls a prior west-room note and skips the conflict path", () => {
   const first = runAgent(
     "book-room",

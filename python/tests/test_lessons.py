@@ -19,6 +19,13 @@ from agentic_lab.lessons import (
     l18_budget_routing,
     l19_credentials,
     l20_trace,
+    l21_durability,
+    l22_protocol,
+    l23_evidence,
+    l24_judges,
+    l25_memory_write,
+    l26_tool_safety,
+    l27_operate,
 )
 
 
@@ -103,6 +110,8 @@ def test_production_evals_pass():
     result = l10_production.run()
     assert result["passed"] is True
     assert result["tip"]["amount_usd"] == 14.62
+    assert result["keyword_eval_passes_a_guess"] is True
+    assert result["trajectory_rejects_that_guess"] is True
 
 
 def test_hand_coded_loop_has_tool_message():
@@ -200,3 +209,82 @@ def test_trace_blames_the_failed_span():
     assert result["failed_span"] == "search"
     assert result["known_steps"] == "workflow"
     assert result["unknown_next_tool"] == "agent"
+
+
+def test_resume_reuses_the_idempotency_key():
+    result = l21_durability.run()
+    assert result["resume_same_receipt"] is True
+    assert result["resume_skipped_provider"] is True
+    assert result["naive_second_charge"] is True
+    assert result["ledger_kept_original"] is True
+    assert result["compensated"] is True
+
+
+def test_protocol_refuses_a_partial_call():
+    result = l22_protocol.run()
+    assert result["partial_not_executed"] is True
+    assert result["partial_has_no_tool_message"] is True
+    assert result["unknown_not_executed"] is True
+    assert result["unknown_replies"] is True
+    assert result["schema_not_executed"] is True
+    assert result["schema_names_the_field"] is True
+    assert result["valid_executed"] is True
+    assert result["mismatched_id_rejected"] is True
+    assert result["matching_id_accepted"] is True
+
+
+def test_conflicting_evidence_is_not_a_citation():
+    result = l23_evidence.run()
+    assert result["conflict"] is True
+    assert result["agreement_answers"] is True
+    assert result["stale_is_a_miss"] is True
+    assert result["fresh_hits"] is True
+    assert result["wrong_citation"] is True
+    assert result["right_citation"] is True
+
+
+def test_fluency_judge_passes_a_guess():
+    result = l24_judges.run()
+    assert result["fluency_passes_guess"] is True
+    assert result["keyword_passes_guess"] is True
+    assert result["grounded_rejects_guess"] is True
+    assert result["grounded_accepts_citation"] is True
+    assert result["prose_rejected"] is True
+    assert result["string_amount_rejected"] is True
+    assert result["json_amount"] is True
+
+
+def test_memory_write_rejects_a_summary():
+    result = l25_memory_write.run()
+    assert result["admits_user_field"] is True
+    assert result["admits_tool_field"] is True
+    assert result["rejects_transcript"] is True
+    assert result["rejects_summary"] is True
+    assert result["clean_next_turn"] is True
+    assert result["poison_becomes_evidence"] is True
+
+
+def test_unsafe_arguments_never_reach_the_provider():
+    result = l26_tool_safety.run()
+    assert result["metadata_denied"] is True
+    assert result["localhost_denied"] is True
+    assert result["private_net_denied"] is True
+    assert result["file_denied"] is True
+    assert result["public_https_allowed"] is True
+    assert result["traversal_denied"] is True
+    assert result["absolute_denied"] is True
+    assert result["child_allowed"] is True
+    assert result["secret_in_args"] is True
+    assert result["clean_args"] is True
+
+
+def test_operate_redacts_and_rolls_back():
+    result = l27_operate.run()
+    assert result["cost"] == 0.00065
+    assert result["redacted"] is True
+    assert result["secret_gone"] is True
+    assert result["rolled_back"] is True
+    assert result["history_keeps_the_bad_run"] is True
+    assert result["blame_tool"] is True
+    assert result["blame_model"] is True
+    assert result["within_budget"] is True

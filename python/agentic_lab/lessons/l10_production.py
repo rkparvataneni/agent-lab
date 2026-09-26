@@ -1,8 +1,9 @@
 """10 · Trajectory evals
 
-A final sentence that mentions an umbrella is not an eval. The trajectory
-is: human, model tool-call, tool result, then the answer. If weather never
-ran, the run fails even when the prose sounds confident.
+A final sentence that mentions an umbrella is not an eval. keyword_eval
+still passes "Pack an umbrella." The trajectory does not: it is human,
+model tool-call, tool result, then the answer. If weather never ran, the
+run fails even when the prose sounds confident.
 
 Ship checklist, in the order you will actually need it:
 
@@ -46,6 +47,11 @@ def structured_tip() -> TipCheck:
     )
 
 
+def trajectory_ok(kinds: list[str], used_weather: bool) -> bool:
+    """Message order and the tool that had to run. The sentence is not an input."""
+    return kinds == ["human", "ai", "tool", "ai"] and used_weather
+
+
 def tokyo_trajectory() -> bool:
     result = l04_react_graph.build().invoke(
         {"messages": [HumanMessage(content=l04_react_graph.GOAL)], "calls": []},
@@ -54,8 +60,12 @@ def tokyo_trajectory() -> bool:
     messages = result["messages"]
     kinds = [message.type for message in messages]
     used_weather = any(getattr(message, "name", None) == "weather" for message in messages)
-    answer = str(messages[-1].content).lower()
-    return kinds == ["human", "ai", "tool", "ai"] and used_weather and "umbrella" in answer
+    return trajectory_ok(kinds, used_weather)
+
+
+def keyword_eval(answer: str) -> bool:
+    """A bad fixture. Confident prose passes even when no tool ran."""
+    return "umbrella" in answer.lower()
 
 
 def eval_suite() -> dict[str, bool]:
@@ -79,10 +89,13 @@ def eval_suite() -> dict[str, bool]:
 
 def run() -> dict:
     checks = eval_suite()
+    guess = "Pack an umbrella. It always rains."
     return {
         "checks": checks,
         "passed": all(checks.values()),
         "tip": structured_tip().model_dump(),
+        "keyword_eval_passes_a_guess": keyword_eval(guess),
+        "trajectory_rejects_that_guess": not trajectory_ok(["human", "ai"], False),
     }
 
 
