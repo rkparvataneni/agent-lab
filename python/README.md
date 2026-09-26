@@ -1,6 +1,6 @@
 # Agentic Lab — expert course
 
-You already know what an agent loop, a tool, and ReAct are. These fifteen modules are the loop written by hand, then the failures a real model adds: uncited numbers, sampling controls, rate limits, a full context window, and instructions hiding in tool output. The graph lessons are the policy you put around that loop.
+You already know what an agent loop, a tool, and ReAct are. These twenty modules are the loop written by hand, then the failures a real model adds: uncited numbers, sampling controls, rate limits, a full context window, and instructions hiding in tool output. The graph lessons are the policy you put around that loop.
 
 The chat model is scripted (`agentic_lab/llm.py`). It speaks the real tool-call protocol. When you have a key, replace `ScriptedChatModel` with `ChatOpenAI` or `ChatAnthropic`. Do not rewrite the edges.
 
@@ -60,6 +60,11 @@ python -m pytest
 | 13 | Sampling controls | temperature, top_p, top_k, max_tokens. A TPU is not a knob |
 | 14 | Rate limits | RPM, TPM, one Retry-After, no retry on policy |
 | 15 | Context and injection | Trim old turns. Tool text is data. length is not a tool call |
+| 16 | Ask, do not invent | Empty slots ask once. Fixtures are not defaults |
+| 17 | Partial tool failure | Keep the successful tool. Retry only the failed name |
+| 18 | Budgets and routing | Small model routes. An estimate that does not fit is not sent |
+| 19 | Credentials | The token is attached by the runtime. A wider scope is denied |
+| 20 | A trace you can defend | Name the failed span. Known steps are a workflow |
 
 ## How the pieces fit
 

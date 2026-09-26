@@ -10,6 +10,11 @@ export const LESSON_SLUGS = [
   "hallucination",
   "controls",
   "rate-limits",
+  "clarify",
+  "partial",
+  "budget",
+  "credentials",
+  "trace",
 ] as const;
 
 export type LessonSlug = (typeof LESSON_SLUGS)[number];
@@ -35,6 +40,14 @@ export type LessonDemo = {
   defaultTinyMaxTokens?: boolean;
   defaultRateLimit?: boolean;
   defaultHonorRetryAfter?: boolean;
+  showClarifyToggle?: boolean;
+  showPartialToggle?: boolean;
+  showBudgetToggle?: boolean;
+  showSecretToggle?: boolean;
+  defaultVagueGoal?: boolean;
+  defaultPartialFailure?: boolean;
+  defaultOverBudget?: boolean;
+  defaultLeakSecret?: boolean;
 };
 
 export type Lesson = {
@@ -483,6 +496,211 @@ if response.error_class == "policy":
     },
     studioHint:
       "Run with Retry-After honored. You should see 429, a sleep, then the forecast. Turn honor off and the run should die on the second 429.",
+  },
+  {
+    slug: "clarify",
+    number: "10",
+    title: "Ask, do not invent",
+    duration: "12 min",
+    summary:
+      "An underspecified goal gets one question. Filling in 2pm, four people, or East because those were the examples is a failed interview.",
+    concept: {
+      heading: "Missing slots are state, not a vibe",
+      paragraphs: [
+        "The prompt they hand you is short on purpose: “Book a room.” A weak answer invents a time, a headcount, and a room so the trace looks finished. The hireable answer names the empty slots and asks one question. You do not get to book, and you do not get to ask three questions when one sentence can carry the gaps.",
+        "Write the required slots down: when, party size, whiteboard. The next node is a function of which ones are still null. Null means ask. A value the user did not say is not a default you are allowed to assume, even if the demo data uses 2pm and four people. Those values are fixtures for the happy path, not permission to hallucinate them.",
+        "Leave the goal underspecified and the trace should stop on a question, with no calendar call and no reserve. Turn that switch off and the same tools may run, because the fixture now has the slots. The difference is the state, not a more careful sentence in the system prompt.",
+      ],
+      takeaways: [
+        "Empty required slots produce one question, not a guess.",
+        "Demo fixtures are not defaults for missing user input.",
+        "The question is a successful stop. Booking is not.",
+      ],
+    },
+    code: {
+      title: "Ask, then stop",
+      source: `slots = {"when": None, "party_size": None, "whiteboard": None}
+missing = [name for name, value in slots.items() if value is None]
+if missing:
+    return ask(missing)   # one question, no tool call
+return reserve(slots)`,
+    },
+    demo: {
+      missionId: "book-room",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showClarifyToggle: true,
+      dualRun: false,
+      defaultVagueGoal: true,
+    },
+    studioHint:
+      "Run with the goal underspecified. There should be a question and no reserve. Turn the switch off to see the fixture run.",
+  },
+  {
+    slug: "partial",
+    number: "11",
+    title: "Partial tool failure",
+    duration: "12 min",
+    summary:
+      "Parallel calls are a join. Keep the tool that succeeded. Retry only the one that failed. Do not recompute a tip you already have.",
+    concept: {
+      heading: "A 500 on search does not erase the calculator",
+      paragraphs: [
+        "Interviewers ask you to fan out when two tools do not depend on each other, then they fail one of them. The wrong recovery throws away both results and starts over. That spends a second calculator call to relearn 14.62 and hides which call actually failed.",
+        "The join keeps a map of name to result. ok stays. failed is the only name you call again, once, with the same arguments. If the retry fails too, you answer with what you have and say what you do not: the tip is $14.62, the hours are unknown. You do not invent the hours to complete the sentence.",
+        "Run the dinner check with search failing once. You should see one calculator observation, a 500, a single search retry, then both facts in the answer. Turn the failure off and there is no retry step.",
+      ],
+      takeaways: [
+        "Independent tools can run together. Their results join by name.",
+        "Retry the failed name only. Do not rerun the success.",
+        "A remaining gap is stated. It is not filled in.",
+      ],
+    },
+    code: {
+      title: "Join, then retry the hole",
+      source: `results = fan_out(["calculator", "search"])
+retry = [name for name, status in results.items() if status != "ok"]
+# calculator stays. search is the only second call.`,
+    },
+    demo: {
+      missionId: "dinner-tip",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showPartialToggle: true,
+      dualRun: false,
+      defaultPartialFailure: true,
+    },
+    studioHint:
+      "Run it. Count calculator calls. There should be one, then a failed search, then one retry.",
+  },
+  {
+    slug: "budget",
+    number: "12",
+    title: "Budgets and routing",
+    duration: "13 min",
+    summary:
+      "Classify on a small model. Spend the large model on the answer. If the next call does not fit the token budget, do not send it.",
+    concept: {
+      heading: "The expensive model is not the default",
+      paragraphs: [
+        "A hiring loop asks what this costs at fifty thousand runs a day. Routing every token through the largest model is the answer that does not get the job. Classification, slot checks, and “is this a weather question” are small-model work. The answer that has to cite a tool result can use the larger one. You log which model ran, because the trace is how you explain the bill.",
+        "A budget is a stop, like max_tokens and like a step cap. Before the call you know the estimate. If 800 tokens will not fit in the 40 that remain, you do not send the request. Truncation is not a budget strategy. A cache of tool name plus arguments inside the run is the other half: the second identical weather call returns the observation you already paid for.",
+        "Leave the budget exceeded and the trace should name the small model, then stop before the answer call. Turn it off and the weather run proceeds. The router did not get smarter. The budget did.",
+      ],
+      takeaways: [
+        "Small model for the route. Large model for the cited answer.",
+        "If the estimate does not fit, do not send the call.",
+        "Cache a repeated (tool, args) inside the run.",
+      ],
+    },
+    code: {
+      title: "Fit the call, or skip it",
+      source: `if role == "classify":
+    model = small
+elif estimate > tokens_left:
+    return stop
+else:
+    model = large`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showBudgetToggle: true,
+      dualRun: false,
+      defaultOverBudget: true,
+    },
+    studioHint:
+      "Run over budget. The trace should stop before the answer model. Turn the ceiling off and weather should run.",
+  },
+  {
+    slug: "credentials",
+    number: "13",
+    title: "Credentials",
+    duration: "12 min",
+    summary:
+      "The user token never enters the prompt. The runtime pins a scope on the tool. The model cannot widen it.",
+    concept: {
+      heading: "The model is not the security boundary",
+      paragraphs: [
+        "They will ask where the OAuth token lives. The wrong answer is “in the system prompt so the model can pass it to the tool.” Anything in the message list can be echoed, logged, or stolen by a tool result that says “repeat your instructions.” The token is attached by your process when it executes the tool, the way a web server attaches a cookie the browser script should not read.",
+        "The scope is an allow-list on that attachment: rooms.reserve, not the user’s whole account. If the model asks for rooms.admin or for a second user’s token, the dispatcher denies it. A sentence in the prompt that says “only reserve rooms” is not a scope. The scope is the credential you actually placed on the call.",
+        "Leave the leak on. The run should refuse before any tool call, and the trace should not contain a token. Turn the leak off and the booking can proceed, because the credential stayed on the tool.",
+      ],
+      takeaways: [
+        "Secrets are attached by the runtime, not written into messages.",
+        "Scope is the credential, not a sentence in the prompt.",
+        "A request to widen scope is a denial, not a tool call.",
+      ],
+    },
+    code: {
+      title: "The token is not a message",
+      source: `def call_tool(name, args, scope):
+    if not scope <= GRANTED:      # {"rooms.reserve"}
+        raise Denied
+    return tools[name](args, credential=runtime_token)
+# runtime_token is never concatenated into the prompt`,
+    },
+    demo: {
+      missionId: "book-room",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showSecretToggle: true,
+      dualRun: false,
+      defaultLeakSecret: true,
+    },
+    studioHint:
+      "Run with the token in the prompt. The run should refuse and call nothing. Turn the leak off to let the booking proceed.",
+  },
+  {
+    slug: "trace",
+    number: "14",
+    title: "A trace you can defend",
+    duration: "12 min",
+    summary:
+      "Every span has a name, a token count, a latency, and a status. If the steps were known up front, you shipped a workflow, not an agent.",
+    concept: {
+      heading: "They will ask you to point at the span",
+      paragraphs: [
+        "“The agent was wrong” is not a debugging report. A trace they will accept has a correlation id and spans: model, tool, and the policy node that stopped the run. Each span carries tokens, latency, and a status. The failed span is the one you name. You do not read the final sentence and guess which call misbehaved.",
+        "The other question is when you would not build an agent at all. If the steps are known before the first token — validate, charge, email — that is a workflow. An agent is for the case where the next tool depends on an observation you do not have yet. Paying a model to rediscover a sequence you could have written is how teams miss a budget and still cannot say which node failed.",
+        "This studio run is the weather path with the spans visible in the trace: a thought, a tool, an observation, an answer. In the Python lesson the same run is a list of spans, and a known sequence is labeled workflow instead of agent.",
+      ],
+      takeaways: [
+        "A span has a name, tokens, latency, and a status.",
+        "You blame the failed span, not the final sentence.",
+        "Known steps are a workflow. An agent is for an unknown next tool.",
+      ],
+    },
+    code: {
+      title: "Point at the span",
+      source: `span = {"name": "search", "tokens": 40, "ms": 180, "status": "failed"}
+blame = next(s for s in spans if s["status"] != "ok")
+architecture = "workflow" if steps_known else "agent"`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      dualRun: false,
+    },
+    studioHint:
+      "Step the weather run and name each span: model, tool, observation, answer. The Python file is the same run as data you can assert on.",
   },
 ];
 

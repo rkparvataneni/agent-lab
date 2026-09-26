@@ -66,4 +66,9 @@ The model is scripted (`python/agentic_lab/llm.py`) so every lesson is determini
 | Hallucination | 12 numbers must be cited |
 | Sampling controls | 13 temperature, top_p, top_k, max_tokens |
 | Rate limits | 14 RPM, TPM, Retry-After |
+| Ask, do not invent | 16 one question, no invented slot |
+| Partial failure | 17 keep the success, retry the failure |
+| Budgets and routing | 18 small model, hard token ceiling |
+| Credentials | 19 token stays off the prompt |
+| A trace you can defend | 20 blame the span; workflow if the steps are known |
 | — | 08 approve then write, 09 handoff contracts, 10 trajectory evals, 15 context and injection |

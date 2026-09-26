@@ -14,6 +14,11 @@ export const BUILD_SLUGS = [
   "controls",
   "rate-limits",
   "context-injection",
+  "clarify",
+  "partial",
+  "budget-routing",
+  "credentials",
+  "trace",
 ] as const;
 
 export type BuildSlug = (typeof BUILD_SLUGS)[number];
@@ -254,6 +259,81 @@ export const BUILD_LESSONS: BuildLesson[] = [
       "Refuse to execute a tool call whose finish_reason is length",
     ],
     why: "The window is a budget. Tool text is data. finish_reason tells you whether the call is complete.",
+  },
+  {
+    slug: "clarify",
+    number: "16",
+    title: "Ask, do not invent",
+    file: "l16_clarify.py",
+    command: "python -m agentic_lab 16",
+    summary:
+      "Empty slots produce one question. The demo's 2pm and four people are not defaults.",
+    youWill: [
+      "List the required slots and refuse to reserve while any are null",
+      "Ask once, even when more than one slot is empty",
+      "Reserve only after the user supplied every slot",
+    ],
+    why: "Inventing the fixture values is the answer that fails the interview.",
+  },
+  {
+    slug: "partial",
+    number: "17",
+    title: "Partial tool failure",
+    file: "l17_parallel.py",
+    command: "python -m agentic_lab 17",
+    summary:
+      "Fan out independent tools. Keep the success. Retry only the name that failed.",
+    youWill: [
+      "Join calculator and search by name",
+      "Leave 14.62 in place when search returns 500",
+      "Say the hours are unknown if the retry fails too",
+    ],
+    why: "Starting over spends a second calculator call to relearn a fact you have.",
+  },
+  {
+    slug: "budget-routing",
+    number: "18",
+    title: "Budgets and routing",
+    file: "l18_budget_routing.py",
+    command: "python -m agentic_lab 18",
+    summary:
+      "Small model for the route, large model for the answer, and no call that does not fit.",
+    youWill: [
+      "Send classification to the small model",
+      "Stop when 800 tokens will not fit in the 40 that remain",
+      "Return a cached weather observation for a repeated fingerprint",
+    ],
+    why: "Fifty thousand runs a day is a routing decision, not a bigger prompt.",
+  },
+  {
+    slug: "credentials",
+    number: "19",
+    title: "Credentials",
+    file: "l19_credentials.py",
+    command: "python -m agentic_lab 19",
+    summary:
+      "The token stays on the tool. A wider scope is a denial. A token in the prompt cancels the call.",
+    youWill: [
+      "Refuse a model call whose prompt contains the user token",
+      "Attach rooms.reserve from the runtime, not from the message list",
+      "Deny rooms.admin even when the model asks for it",
+    ],
+    why: "Anything in the message list can be echoed. The scope is the credential you attached.",
+  },
+  {
+    slug: "trace",
+    number: "20",
+    title: "A trace you can defend",
+    file: "l20_trace.py",
+    command: "python -m agentic_lab 20",
+    summary:
+      "Name the failed span. If the steps were known up front, ship a workflow.",
+    youWill: [
+      "Put tokens, latency, and status on every span under one trace id",
+      "Blame the failed span rather than the final sentence",
+      "Choose workflow when the next step is known, agent when it is not",
+    ],
+    why: "“The agent was wrong” is not a debugging report.",
   },
 ];
 

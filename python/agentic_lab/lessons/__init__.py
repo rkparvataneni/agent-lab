@@ -14,6 +14,11 @@ from . import (
     l13_controls,
     l14_rate_limits,
     l15_context_and_injection,
+    l16_clarify,
+    l17_parallel,
+    l18_budget_routing,
+    l19_credentials,
+    l20_trace,
 )
 
 LESSONS = [
@@ -32,4 +37,9 @@ LESSONS = [
     l13_controls,
     l14_rate_limits,
     l15_context_and_injection,
+    l16_clarify,
+    l17_parallel,
+    l18_budget_routing,
+    l19_credentials,
+    l20_trace,
 ]

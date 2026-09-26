@@ -131,9 +131,10 @@ export default function HomePage() {
             <div>
               <h2 className="font-heading text-2xl">Expert course</h2>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Fifteen Python files you run with pytest: the hand-written loop,
-                hallucination checks, sampling controls, rate limits, and the graph
-                policies around them.
+                Twenty Python files you run with pytest: the hand-written loop,
+                hallucination, sampling controls, rate limits, and the questions
+                a hiring loop actually asks — missing slots, partial failure,
+                cost, credentials, and a trace you can point at.
               </p>
             </div>
           </div>

@@ -34,6 +34,10 @@ function configFromDemo(demo: LessonDemo): RunConfig {
     maxTokens: demo.defaultTinyMaxTokens ? 8 : 256,
     injectRateLimit: demo.defaultRateLimit ?? false,
     honorRetryAfter: demo.defaultHonorRetryAfter ?? true,
+    vagueGoal: demo.defaultVagueGoal ?? false,
+    partialFailure: demo.defaultPartialFailure ?? false,
+    overBudget: demo.defaultOverBudget ?? false,
+    leakSecret: demo.defaultLeakSecret ?? false,
     tools: demo.defaultTools,
   });
 }
@@ -57,6 +61,10 @@ export function Studio({
   const [tinyMaxTokens, setTinyMaxTokens] = useState(demo.defaultTinyMaxTokens ?? false);
   const [injectRateLimit, setInjectRateLimit] = useState(demo.defaultRateLimit ?? false);
   const [honorRetryAfter, setHonorRetryAfter] = useState(demo.defaultHonorRetryAfter ?? true);
+  const [vagueGoal, setVagueGoal] = useState(demo.defaultVagueGoal ?? false);
+  const [partialFailure, setPartialFailure] = useState(demo.defaultPartialFailure ?? false);
+  const [overBudget, setOverBudget] = useState(demo.defaultOverBudget ?? false);
+  const [leakSecret, setLeakSecret] = useState(demo.defaultLeakSecret ?? false);
   const [notes, setNotes] = useState<string[]>([]);
   const [run, setRun] = useState<AgentRun | null>(null);
   const [visible, setVisible] = useState(0);
@@ -93,6 +101,10 @@ export function Studio({
         maxTokens: tinyMaxTokens ? 8 : 256,
         injectRateLimit,
         honorRetryAfter,
+        vagueGoal,
+        partialFailure,
+        overBudget,
+        leakSecret,
       },
       notes,
     );
@@ -196,7 +208,11 @@ export function Studio({
       demo.showFailureToggle ||
       demo.showGroundingToggle ||
       demo.showControls ||
-      demo.showRateLimitToggle ? (
+      demo.showRateLimitToggle ||
+      demo.showClarifyToggle ||
+      demo.showPartialToggle ||
+      demo.showBudgetToggle ||
+      demo.showSecretToggle ? (
         <div className="grid gap-3 md:grid-cols-2">
           {demo.allowToolToggle ? (
             <Card>
@@ -320,6 +336,51 @@ export function Studio({
                       onCheckedChange={setHonorRetryAfter}
                     />
                   </>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {demo.showClarifyToggle ||
+          demo.showPartialToggle ||
+          demo.showBudgetToggle ||
+          demo.showSecretToggle ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Hiring screen</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {demo.showClarifyToggle ? (
+                  <ToggleRow
+                    label="Goal is underspecified"
+                    hint="No time, no headcount, no whiteboard. Ask. Do not invent them."
+                    checked={vagueGoal}
+                    onCheckedChange={setVagueGoal}
+                  />
+                ) : null}
+                {demo.showPartialToggle ? (
+                  <ToggleRow
+                    label="Search fails once"
+                    hint="Keep the calculator result. Retry only search."
+                    checked={partialFailure}
+                    onCheckedChange={setPartialFailure}
+                  />
+                ) : null}
+                {demo.showBudgetToggle ? (
+                  <ToggleRow
+                    label="Answer exceeds the budget"
+                    hint="40 tokens left. The answer model wants 800."
+                    checked={overBudget}
+                    onCheckedChange={setOverBudget}
+                  />
+                ) : null}
+                {demo.showSecretToggle ? (
+                  <ToggleRow
+                    label="Paste the token into the prompt"
+                    hint="This is the wrong design. The run should refuse."
+                    checked={leakSecret}
+                    onCheckedChange={setLeakSecret}
+                  />
                 ) : null}
               </CardContent>
             </Card>
@@ -514,6 +575,10 @@ export function PlaygroundStudio() {
           showGroundingToggle: true,
           showControls: true,
           showRateLimitToggle: true,
+          showClarifyToggle: missionId === "book-room",
+          showPartialToggle: missionId === "dinner-tip",
+          showBudgetToggle: true,
+          showSecretToggle: missionId === "book-room",
           dualRun: true,
           defaultMemory: true,
           defaultPlanning: true,

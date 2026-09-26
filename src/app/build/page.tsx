@@ -18,10 +18,12 @@ export default function BuildIndexPage() {
           Hand-code the loop, then put a policy around it.
         </h1>
         <p className="mt-4 text-base leading-7 text-muted-foreground">
-          Fifteen Python lessons. You write the agent loop with no framework, then
-          the checks that keep it honest: cited numbers, sampling controls, RPM and
-          TPM, context trimming, and the graph policies around evidence, tools, and
-          handoffs. The model is scripted so the code you wrote is what you study.
+          Twenty Python lessons. You write the agent loop with no framework, then
+          the checks a hiring loop asks you to demonstrate: cited numbers, sampling
+          controls, rate limits, one question instead of an invented slot, a partial
+          tool failure, a token budget, credentials that never enter the prompt, and
+          a trace you can point at. The model is scripted so the code you wrote is
+          what you study.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <LinkButton href={`/build/${BUILD_LESSONS[0].slug}`}>

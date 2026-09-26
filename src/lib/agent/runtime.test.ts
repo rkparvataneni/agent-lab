@@ -97,6 +97,39 @@ test("honored retry-after still answers, ignored retry exhausts", () => {
   assert.match(hammered.steps.at(-1)?.body ?? "", /Second 429/);
 });
 
+test("a vague booking asks and does not reserve", () => {
+  const vague = runAgent("book-room", defaultConfig({ vagueGoal: true }));
+  assert.equal(vague.status, "answered");
+  assert.deepEqual(vague.toolsUsed, []);
+  assert.match(vague.answer ?? "", /whiteboard/i);
+  assert.doesNotMatch(vague.answer ?? "", /East/);
+
+  const specified = runAgent("book-room", defaultConfig({ vagueGoal: false }));
+  assert.ok(specified.toolsUsed.includes("rooms"));
+});
+
+test("a failed search does not recompute the tip", () => {
+  const run = runAgent("dinner-tip", defaultConfig({ partialFailure: true }));
+  const calculatorCalls = run.steps.filter((step) => step.title.includes("calculator"));
+  assert.equal(calculatorCalls.length, 1);
+  assert.ok(run.steps.some((step) => step.body.includes("Do not recompute")));
+  assert.match(run.answer ?? "", /14\.62/);
+});
+
+test("an over-budget answer is not sent", () => {
+  const run = runAgent("tokyo-weekend", defaultConfig({ overBudget: true }));
+  assert.equal(run.status, "blocked");
+  assert.match(run.steps.at(-1)?.body ?? "", /40 tokens/);
+  assert.deepEqual(run.toolsUsed, []);
+});
+
+test("a token in the prompt refuses the call", () => {
+  const leaked = runAgent("book-room", defaultConfig({ leakSecret: true }));
+  assert.equal(leaked.status, "blocked");
+  assert.deepEqual(leaked.toolsUsed, []);
+  assert.match(leaked.steps.at(-1)?.body ?? "", /token/);
+});
+
 test("memory recalls a prior west-room note and skips the conflict path", () => {
   const first = runAgent(
     "book-room",

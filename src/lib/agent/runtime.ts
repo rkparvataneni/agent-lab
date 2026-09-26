@@ -469,6 +469,89 @@ export function runAgent(
     );
   } else if (config.injectRateLimit && !config.honorRetryAfter) {
     drafts.push(...rateLimitExhausted());
+  } else if (config.leakSecret) {
+    drafts.push({
+      kind: "error",
+      title: "Credential leak",
+      body: "The user token was pasted into the prompt. Refuse the model call. The runtime attaches a rooms.reserve scope on the tool. The model cannot widen that scope, and the token is not a message.",
+    });
+  } else if (config.overBudget) {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Route",
+        body: "Classification used the small model, 12 tokens. The answer model would spend 800.",
+      },
+      {
+        kind: "error",
+        title: "Over budget",
+        body: "40 tokens remain. The answer call does not fit. Stop. Do not send it and hope the provider truncates something useful.",
+      },
+    );
+  } else if (config.vagueGoal && missionId === "book-room") {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Missing slots",
+        body: "party_size, when, and whiteboard are unset. Inventing 2pm, 4 people, or East is the bug interviewers are listening for.",
+      },
+      {
+        kind: "answer",
+        title: "One question",
+        body: "What time, how many people, and do you need a whiteboard? I will not book until you say.",
+      },
+    );
+  } else if (config.partialFailure && missionId === "dinner-tip") {
+    drafts.push(
+      {
+        kind: "thought",
+        title: "Fan-out",
+        body: "Calculator and search do not depend on each other. Call both. A failure of one does not discard the other.",
+      },
+      {
+        kind: "action",
+        title: "Action · calculator",
+        body: "Evaluate 86 * 0.17",
+        tool: "calculator",
+        args: { expression: "86 * 0.17" },
+      },
+      {
+        kind: "observation",
+        title: "Observation",
+        body: "14.62",
+        tool: "calculator",
+      },
+      {
+        kind: "action",
+        title: "Action · search",
+        body: "Look up Katsu House hours.",
+        tool: "search",
+        args: { query: "Katsu House hours today" },
+      },
+      {
+        kind: "error",
+        title: "search failed",
+        body: "HTTP 500 from search. Keep 14.62. Do not recompute 86 * 0.17.",
+      },
+      {
+        kind: "action",
+        title: "Retry · search",
+        body: "Same query, once.",
+        tool: "search",
+        args: { query: "Katsu House hours today" },
+      },
+      {
+        kind: "observation",
+        title: "Observation",
+        body: "Katsu House · open 11:30–22:00. Local time 20:10.",
+        tool: "search",
+      },
+      {
+        kind: "answer",
+        title: "Answer",
+        body: "A 17% tip on $86 is $14.62. Katsu House is open until 22:00 and it is 20:10 now.",
+      },
+    );
   } else if (missing.length > 0 && recalled.length === 0) {
     if (config.planning) {
       drafts.push({
@@ -500,7 +583,11 @@ export function runAgent(
     config.honorRetryAfter &&
     config.maxTokens >= 24 &&
     config.grounding &&
-    !hotSample
+    !hotSample &&
+    !config.leakSecret &&
+    !config.overBudget &&
+    !(config.vagueGoal && missionId === "book-room") &&
+    !(config.partialFailure && missionId === "dinner-tip")
   ) {
     drafts.unshift(...RATE_LIMIT_BACKOFF);
   }
@@ -559,6 +646,10 @@ export function defaultConfig(
     maxTokens: overrides.maxTokens ?? 256,
     injectRateLimit: overrides.injectRateLimit ?? false,
     honorRetryAfter: overrides.honorRetryAfter ?? true,
+    vagueGoal: overrides.vagueGoal ?? false,
+    partialFailure: overrides.partialFailure ?? false,
+    overBudget: overrides.overBudget ?? false,
+    leakSecret: overrides.leakSecret ?? false,
     tools: {
       weather: true,
       calculator: true,

@@ -14,6 +14,11 @@ from agentic_lab.lessons import (
     l13_controls,
     l14_rate_limits,
     l15_context_and_injection,
+    l16_clarify,
+    l17_parallel,
+    l18_budget_routing,
+    l19_credentials,
+    l20_trace,
 )
 
 
@@ -151,3 +156,47 @@ def test_context_trim_keeps_latest_tool_and_ignores_injection():
     assert result["injection_detected"] is True
     assert result["execute_on_tool_calls"] is True
     assert result["execute_on_length"] is False
+
+
+def test_clarify_asks_instead_of_inventing():
+    result = l16_clarify.run()
+    assert result["empty_action"] == "ask"
+    assert result["empty_invented"] is False
+    assert result["empty_tool"] is None
+    assert result["one_question"] is True
+    assert result["partial_still_asks"] is True
+    assert result["ready_reserves"] is True
+
+
+def test_partial_failure_keeps_the_success():
+    result = l17_parallel.run()
+    assert result["kept_tip"] is True
+    assert result["retried_only_search"] is True
+    assert result["did_not_recompute"] is True
+    assert result["both_ok"] is True
+
+
+def test_budget_routes_and_stops():
+    result = l18_budget_routing.run()
+    assert result["classify_model"] == "small"
+    assert result["answer_model"] == "large"
+    assert result["over_budget"] == "stop"
+    assert result["cache_hit"] == "Saturday showers, 70%"
+    assert result["cache_miss"] is None
+
+
+def test_credentials_never_enter_the_prompt():
+    result = l19_credentials.run()
+    assert result["leak_blocked"] is True
+    assert result["scoped_called"] is True
+    assert result["scoped_prompt_clean"] is True
+    assert result["widen_denied"] is True
+
+
+def test_trace_blames_the_failed_span():
+    result = l20_trace.run()
+    assert result["one_trace"] is True
+    assert result["healthy_blame"] is None
+    assert result["failed_span"] == "search"
+    assert result["known_steps"] == "workflow"
+    assert result["unknown_next_tool"] == "agent"

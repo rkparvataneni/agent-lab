@@ -55,6 +55,14 @@ export type RunConfig = {
   injectRateLimit: boolean;
   /** Sleep the header, then retry once. Immediate retries burn RPM. */
   honorRetryAfter: boolean;
+  /** The user left required slots empty. Ask once. Do not invent them. */
+  vagueGoal: boolean;
+  /** One of two parallel tools fails. Keep the success and retry only the failure. */
+  partialFailure: boolean;
+  /** The next model call would exceed the token budget. */
+  overBudget: boolean;
+  /** The user token was copied into the prompt. Refuse the call. */
+  leakSecret: boolean;
 };
 
 export type RunStatus = "answered" | "blocked" | "failed";
