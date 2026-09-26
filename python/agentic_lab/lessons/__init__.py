@@ -9,6 +9,11 @@ from . import (
     l08_hitl,
     l09_multi_agent,
     l10_production,
+    l11_hand_code,
+    l12_hallucination,
+    l13_controls,
+    l14_rate_limits,
+    l15_context_and_injection,
 )
 
 LESSONS = [
@@ -22,4 +27,9 @@ LESSONS = [
     l08_hitl,
     l09_multi_agent,
     l10_production,
+    l11_hand_code,
+    l12_hallucination,
+    l13_controls,
+    l14_rate_limits,
+    l15_context_and_injection,
 ]

@@ -43,6 +43,18 @@ export type RunConfig = {
   memory: boolean;
   planning: boolean;
   injectFailure: boolean;
+  /** When false, the model may answer with no observation in state. */
+  grounding: boolean;
+  /** 0 keeps the mode (the tool token). High values can skip the tool call. */
+  temperature: number;
+  /** Nucleus cutoff. A tight top-p collapses back onto the mode. */
+  topP: number;
+  /** Hard cap on the completion. Too small truncates tool-call JSON. */
+  maxTokens: number;
+  /** First model call returns HTTP 429 with Retry-After. */
+  injectRateLimit: boolean;
+  /** Sleep the header, then retry once. Immediate retries burn RPM. */
+  honorRetryAfter: boolean;
 };
 
 export type RunStatus = "answered" | "blocked" | "failed";

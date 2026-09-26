@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s · Agentic Lab",
   },
   description:
-    "An expert workshop for shipping agents: control policy, tool contracts, loop guards, and trajectory evals.",
+    "Hand-code agents, then control hallucination, sampling parameters, rate limits, and the graph around them.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

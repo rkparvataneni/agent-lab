@@ -9,6 +9,11 @@ export const BUILD_SLUGS = [
   "hitl",
   "multi-agent",
   "production",
+  "hand-code",
+  "hallucination",
+  "controls",
+  "rate-limits",
+  "context-injection",
 ] as const;
 
 export type BuildSlug = (typeof BUILD_SLUGS)[number];
@@ -174,6 +179,81 @@ export const BUILD_LESSONS: BuildLesson[] = [
       "Return a Pydantic tip instead of prose you would have to regex",
     ],
     why: "A confident umbrella sentence with no weather call is a failed eval.",
+  },
+  {
+    slug: "hand-code",
+    number: "11",
+    title: "Hand-code the loop",
+    file: "l11_hand_code.py",
+    command: "python -m agentic_lab 11",
+    summary:
+      "No StateGraph. Messages, a model call, your dispatcher, a tool message, stop when tool_calls is empty.",
+    youWill: [
+      "Write the while-loop an agent framework compiles",
+      "Append ToolMessage with the assistant tool_call_id",
+      "Finish human → assistant → tool → assistant on the umbrella question",
+    ],
+    why: "If you cannot write this file, you cannot tell which node in a graph dropped a tool result.",
+  },
+  {
+    slug: "hallucination",
+    number: "12",
+    title: "Hallucination",
+    file: "l12_hallucination.py",
+    command: "python -m agentic_lab 12",
+    summary:
+      "Reject a guess with no observation, a narrated tool result, and a number the tool never returned.",
+    youWill: [
+      "Require every number in the answer to appear in the user text or a tool message",
+      "Treat an empty observation list as ungrounded",
+      "Reject a phone number that search did not return",
+    ],
+    why: "Fluency is not evidence. The check is a set comparison, not a vibe.",
+  },
+  {
+    slug: "controls",
+    number: "13",
+    title: "Sampling controls",
+    file: "l13_controls.py",
+    command: "python -m agentic_lab 13",
+    summary:
+      "temperature, top_p, top_k, and max_tokens change the draw. A TPU is hardware. TPM is a budget.",
+    youWill: [
+      "See a hot sample skip the tool while a tight top_p returns to the mode",
+      "Refuse a completion whose finish would be length",
+      "Keep the same seed on the same label",
+    ],
+    why: "People mix up top_p, TPM, and TPU because the names are short. Only one of them is a sampler.",
+  },
+  {
+    slug: "rate-limits",
+    number: "14",
+    title: "Rate limits",
+    file: "l14_rate_limits.py",
+    command: "python -m agentic_lab 14",
+    summary:
+      "RPM and TPM are different caps. Honor Retry-After once. Do not retry a policy error.",
+    youWill: [
+      "Admit a call against RPM and TPM separately",
+      "Sleep Retry-After and send the same request once",
+      "Stop on a policy error without a second call",
+    ],
+    why: "An immediate retry sits in the same window. It spends RPM and does not change the answer.",
+  },
+  {
+    slug: "context-injection",
+    number: "15",
+    title: "Context and injection",
+    file: "l15_context_and_injection.py",
+    command: "python -m agentic_lab 15",
+    summary:
+      "Trim old turns, keep the latest tool result, and never obey instructions that arrived inside a tool message.",
+    youWill: [
+      "Drop an old answer when the token budget is tight",
+      "Keep the system message and the latest tool result",
+      "Refuse to execute a tool call whose finish_reason is length",
+    ],
+    why: "The window is a budget. Tool text is data. finish_reason tells you whether the call is complete.",
   },
 ];
 

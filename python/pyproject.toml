@@ -1,7 +1,7 @@
 [project]
 name = "agentic-lab"
 version = "0.2.0"
-description = "Expert track: control policy, tool contracts, and trajectory evals on LangGraph"
+description = "Expert course: hand-coded agents, hallucination checks, sampling controls, and rate limits"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

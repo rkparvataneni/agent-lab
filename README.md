@@ -1,9 +1,9 @@
 # Agentic Lab
 
-An expert track. It assumes you already know the loop, tools, ReAct, and what a checkpointer is. The work is the control policy you put around them.
+Expert agent course. You leave able to hand-code an agent and to name the failures that show up once it is on a real model: hallucination, sampling controls, rate limits, context, and injection.
 
-1. **Design studio** (Next.js) — watch an evidence gate, a broken tool contract, a store hit, and a failure class. No API key.
-2. **Developer track** (Python) — the same decisions in **LangGraph**: routers, contracts, loop guards, a store, approval before writes, handoff allow-lists, and trajectory evals.
+1. **Design studio** (Next.js) — watch the loop, an ungrounded answer, a hot sample, a truncated tool call, and a 429. No API key.
+2. **Expert course** (Python) — the same lessons as code you run: a hand-written loop, citation checks, temperature and top_p, RPM/TPM, then the LangGraph policies around them.
 
 ## Design studio
 
@@ -15,7 +15,7 @@ npm run dev
 Open [http://localhost:43217](http://localhost:43217).
 
 - `/` path
-- `/lesson/loop` … `/lesson/planning`
+- `/lesson/loop` … `/lesson/rate-limits`
 - `/playground`
 - `/build` — the LangGraph syllabus, with the real Python source on each page
 
@@ -24,7 +24,7 @@ npm test
 npm run build
 ```
 
-## Developer track
+## Expert course
 
 macOS and Linux:
 
@@ -62,4 +62,8 @@ The model is scripted (`python/agentic_lab/llm.py`) so every lesson is determini
 | Loop guards | 04 fingerprint stop, 05 harness boundary |
 | Context engineering | 06 thread vs store |
 | Failure policy | 07 retry, replan, escalate |
-| — | 08 approve then write, 09 handoff contracts, 10 trajectory evals |
+| Hand-code the loop | 11 messages, dispatch, tool_call_id |
+| Hallucination | 12 numbers must be cited |
+| Sampling controls | 13 temperature, top_p, top_k, max_tokens |
+| Rate limits | 14 RPM, TPM, Retry-After |
+| — | 08 approve then write, 09 handoff contracts, 10 trajectory evals, 15 context and injection |

@@ -49,6 +49,54 @@ test("booking conflict replans to the west room", () => {
   assert.match(run.answer ?? "", /West/);
 });
 
+test("ungrounded dinner answer skips tools", () => {
+  const run = runAgent("dinner-tip", defaultConfig({ grounding: false }));
+  assert.equal(run.status, "answered");
+  assert.deepEqual(run.toolsUsed, []);
+  assert.match(run.answer ?? "", /roughly \$15/);
+});
+
+test("high temperature skips the tool unless top-p is tight", () => {
+  const hot = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ temperature: 1.1, topP: 1 }),
+  );
+  assert.deepEqual(hot.toolsUsed, []);
+  assert.match(hot.answer ?? "", /climate prior/);
+
+  const tight = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ temperature: 1.1, topP: 0.1 }),
+  );
+  assert.deepEqual(tight.toolsUsed, ["weather"]);
+  assert.match(tight.answer ?? "", /umbrella/i);
+});
+
+test("tiny max tokens stops before a tool runs", () => {
+  const run = runAgent("tokyo-weekend", defaultConfig({ maxTokens: 8 }));
+  assert.equal(run.status, "blocked");
+  assert.equal(run.answer, null);
+  assert.match(run.steps.at(-1)?.body ?? "", /max_tokens/);
+});
+
+test("honored retry-after still answers, ignored retry exhausts", () => {
+  const honored = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ injectRateLimit: true, honorRetryAfter: true }),
+  );
+  assert.equal(honored.status, "answered");
+  assert.match(honored.answer ?? "", /umbrella/i);
+  assert.ok(honored.steps.some((step) => step.title.includes("429")));
+
+  const hammered = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ injectRateLimit: true, honorRetryAfter: false }),
+  );
+  assert.equal(hammered.status, "blocked");
+  assert.equal(hammered.answer, null);
+  assert.match(hammered.steps.at(-1)?.body ?? "", /Second 429/);
+});
+
 test("memory recalls a prior west-room note and skips the conflict path", () => {
   const first = runAgent(
     "book-room",

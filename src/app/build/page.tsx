@@ -12,17 +12,16 @@ export default function BuildIndexPage() {
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6 sm:py-12">
       <section className="max-w-3xl">
         <p className="font-mono text-[11px] tracking-[0.18em] text-primary uppercase">
-          Developer track
+          Expert course
         </p>
         <h1 className="font-heading mt-3 text-4xl leading-tight tracking-tight sm:text-5xl">
-          The graph you would put in CI.
+          Hand-code the loop, then put a policy around it.
         </h1>
         <p className="mt-4 text-base leading-7 text-muted-foreground">
-          Ten Python lessons for people who already know the loop, tools, and ReAct.
-          You will write the evidence gate, the tool contract, the loop guard, the
-          failure class, the handoff allow-list, and the trajectory eval. The model
-          is scripted so the graph is what you study. Swap in ChatOpenAI later — the
-          edges do not change.
+          Fifteen Python lessons. You write the agent loop with no framework, then
+          the checks that keep it honest: cited numbers, sampling controls, RPM and
+          TPM, context trimming, and the graph policies around evidence, tools, and
+          handoffs. The model is scripted so the code you wrote is what you study.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <LinkButton href={`/build/${BUILD_LESSONS[0].slug}`}>

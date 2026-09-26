@@ -28,6 +28,12 @@ function configFromDemo(demo: LessonDemo): RunConfig {
     memory: demo.defaultMemory ?? false,
     planning: demo.defaultPlanning ?? false,
     injectFailure: demo.defaultFailure ?? false,
+    grounding: demo.defaultGrounding ?? true,
+    temperature: demo.defaultHighTemperature ? 1.1 : 0,
+    topP: demo.defaultTightTopP ? 0.1 : 1,
+    maxTokens: demo.defaultTinyMaxTokens ? 8 : 256,
+    injectRateLimit: demo.defaultRateLimit ?? false,
+    honorRetryAfter: demo.defaultHonorRetryAfter ?? true,
     tools: demo.defaultTools,
   });
 }
@@ -45,6 +51,12 @@ export function Studio({
   const [memory, setMemory] = useState(demo.defaultMemory ?? false);
   const [planning, setPlanning] = useState(demo.defaultPlanning ?? false);
   const [injectFailure, setInjectFailure] = useState(demo.defaultFailure ?? false);
+  const [grounding, setGrounding] = useState(demo.defaultGrounding ?? true);
+  const [highTemperature, setHighTemperature] = useState(demo.defaultHighTemperature ?? false);
+  const [tightTopP, setTightTopP] = useState(demo.defaultTightTopP ?? false);
+  const [tinyMaxTokens, setTinyMaxTokens] = useState(demo.defaultTinyMaxTokens ?? false);
+  const [injectRateLimit, setInjectRateLimit] = useState(demo.defaultRateLimit ?? false);
+  const [honorRetryAfter, setHonorRetryAfter] = useState(demo.defaultHonorRetryAfter ?? true);
   const [notes, setNotes] = useState<string[]>([]);
   const [run, setRun] = useState<AgentRun | null>(null);
   const [visible, setVisible] = useState(0);
@@ -70,7 +82,18 @@ export function Studio({
   function startRun() {
     const next = runAgent(
       demo.missionId,
-      { tools, memory, planning, injectFailure },
+      {
+        tools,
+        memory,
+        planning,
+        injectFailure,
+        grounding,
+        temperature: highTemperature ? 1.1 : 0,
+        topP: tightTopP ? 0.1 : 1,
+        maxTokens: tinyMaxTokens ? 8 : 256,
+        injectRateLimit,
+        honorRetryAfter,
+      },
       notes,
     );
     setRun(next);
@@ -170,7 +193,10 @@ export function Studio({
       {demo.allowToolToggle ||
       demo.showMemoryToggle ||
       demo.showPlanningToggle ||
-      demo.showFailureToggle ? (
+      demo.showFailureToggle ||
+      demo.showGroundingToggle ||
+      demo.showControls ||
+      demo.showRateLimitToggle ? (
         <div className="grid gap-3 md:grid-cols-2">
           {demo.allowToolToggle ? (
             <Card>
@@ -238,6 +264,62 @@ export function Studio({
                     checked={injectFailure}
                     onCheckedChange={setInjectFailure}
                   />
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {demo.showGroundingToggle || demo.showControls || demo.showRateLimitToggle ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Model call</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {demo.showGroundingToggle ? (
+                  <ToggleRow
+                    label="Require observations"
+                    hint="Off: the model may answer with an empty tool transcript"
+                    checked={grounding}
+                    onCheckedChange={setGrounding}
+                  />
+                ) : null}
+                {demo.showControls ? (
+                  <>
+                    <ToggleRow
+                      label="High temperature"
+                      hint="1.1 — the tail can skip the tool token"
+                      checked={highTemperature}
+                      onCheckedChange={setHighTemperature}
+                    />
+                    <ToggleRow
+                      label="Tight top-p"
+                      hint="0.1 — nucleus collapses back onto the mode"
+                      checked={tightTopP}
+                      onCheckedChange={setTightTopP}
+                    />
+                    <ToggleRow
+                      label="Tiny max tokens"
+                      hint="8 — tool-call JSON is cut off. finish_reason length"
+                      checked={tinyMaxTokens}
+                      onCheckedChange={setTinyMaxTokens}
+                    />
+                  </>
+                ) : null}
+                {demo.showRateLimitToggle ? (
+                  <>
+                    <ToggleRow
+                      label="Inject 429"
+                      hint="TPM budget empty. Retry-After: 2"
+                      checked={injectRateLimit}
+                      onCheckedChange={setInjectRateLimit}
+                    />
+                    <ToggleRow
+                      label="Honor Retry-After"
+                      hint="Sleep, then send the same request once"
+                      checked={honorRetryAfter}
+                      onCheckedChange={setHonorRetryAfter}
+                    />
+                  </>
                 ) : null}
               </CardContent>
             </Card>
@@ -429,6 +511,9 @@ export function PlaygroundStudio() {
           showMemoryToggle: true,
           showPlanningToggle: true,
           showFailureToggle: missionId === "book-room",
+          showGroundingToggle: true,
+          showControls: true,
+          showRateLimitToggle: true,
           dualRun: true,
           defaultMemory: true,
           defaultPlanning: true,

@@ -365,6 +365,80 @@ function noteFor(missionId: MissionId, steps: StepDraft[]): string | null {
   }
 }
 
+function ungroundedAnswer(missionId: MissionId): string {
+  switch (missionId) {
+    case "tokyo-weekend":
+      return "Tokyo weekends are often rainy, so pack an umbrella. That is a climate prior, not a forecast.";
+    case "dinner-tip":
+      return "17% of $86 is roughly $15. Katsu House is probably still open.";
+    case "book-room":
+      return "Book the East room. The calendar and the whiteboard were not checked.";
+  }
+}
+
+function sampledGuess(missionId: MissionId, why: string): StepDraft[] {
+  return [
+    {
+      kind: "thought",
+      title: "No tool call",
+      body: why,
+    },
+    {
+      kind: "answer",
+      title: "Ungrounded answer",
+      body: ungroundedAnswer(missionId),
+    },
+  ];
+}
+
+function truncatedCall(): StepDraft[] {
+  return [
+    {
+      kind: "error",
+      title: "stop_reason = length",
+      body: "max_tokens cut the tool-call JSON before the object closed. Do not execute a partial call. This is not a policy error and not a 429. Raise max_tokens, or shorten the prompt.",
+    },
+  ];
+}
+
+function rateLimitExhausted(): StepDraft[] {
+  return [
+    {
+      kind: "action",
+      title: "Model call",
+      body: "POST /chat/completions · about 800 tokens",
+    },
+    {
+      kind: "error",
+      title: "429 rate_limit",
+      body: "TPM remaining 0 of 30000. Retry-After: 2. RPM and TPM are separate caps. A 429 is retryable. A policy rejection is not.",
+    },
+    {
+      kind: "action",
+      title: "Immediate retry",
+      body: "Retry-After was ignored. The same request went out inside the window.",
+    },
+    {
+      kind: "error",
+      title: "Budget exhausted",
+      body: "Second 429. Stop. Honor the header, then retry once. Hammering the endpoint spends RPM and does not change the answer.",
+    },
+  ];
+}
+
+const RATE_LIMIT_BACKOFF: StepDraft[] = [
+  {
+    kind: "error",
+    title: "429 rate_limit",
+    body: "TPM remaining 0 of 30000. Retry-After: 2. The request itself is fine.",
+  },
+  {
+    kind: "thought",
+    title: "Backoff",
+    body: "Slept 2s from Retry-After, then sent the same request once. A policy error would have stopped here instead.",
+  },
+];
+
 export function runAgent(
   missionId: MissionId,
   config: RunConfig,
@@ -375,8 +449,27 @@ export function runAgent(
   const missing = missingRequired(config, mission.required);
 
   const drafts: StepDraft[] = [];
+  const hotSample = config.temperature >= 0.8 && config.topP > 0.3;
 
-  if (missing.length > 0 && recalled.length === 0) {
+  if (config.maxTokens < 24) {
+    drafts.push(...truncatedCall());
+  } else if (!config.grounding) {
+    drafts.push(
+      ...sampledGuess(
+        missionId,
+        "Grounding is off. A fluent answer is allowed with an empty observation list. Nothing in that sentence was returned by a tool.",
+      ),
+    );
+  } else if (hotSample) {
+    drafts.push(
+      ...sampledGuess(
+        missionId,
+        `temperature ${config.temperature} spread the distribution and top_p ${config.topP} left the tail in play, so the sample skipped the tool token. Tighten top_p or drop temperature to land on the mode.`,
+      ),
+    );
+  } else if (config.injectRateLimit && !config.honorRetryAfter) {
+    drafts.push(...rateLimitExhausted());
+  } else if (missing.length > 0 && recalled.length === 0) {
     if (config.planning) {
       drafts.push({
         kind: "plan",
@@ -400,6 +493,16 @@ export function runAgent(
     drafts.push(...buildDinner(config, recalled));
   } else {
     drafts.push(...buildRoom(config, recalled));
+  }
+
+  if (
+    config.injectRateLimit &&
+    config.honorRetryAfter &&
+    config.maxTokens >= 24 &&
+    config.grounding &&
+    !hotSample
+  ) {
+    drafts.unshift(...RATE_LIMIT_BACKOFF);
   }
 
   const steps: AgentStep[] = drafts.map((step, index) => ({
@@ -450,6 +553,12 @@ export function defaultConfig(
     memory: overrides.memory ?? false,
     planning: overrides.planning ?? false,
     injectFailure: overrides.injectFailure ?? false,
+    grounding: overrides.grounding ?? true,
+    temperature: overrides.temperature ?? 0,
+    topP: overrides.topP ?? 1,
+    maxTokens: overrides.maxTokens ?? 256,
+    injectRateLimit: overrides.injectRateLimit ?? false,
+    honorRetryAfter: overrides.honorRetryAfter ?? true,
     tools: {
       weather: true,
       calculator: true,

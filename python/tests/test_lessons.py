@@ -9,6 +9,11 @@ from agentic_lab.lessons import (
     l08_hitl,
     l09_multi_agent,
     l10_production,
+    l11_hand_code,
+    l12_hallucination,
+    l13_controls,
+    l14_rate_limits,
+    l15_context_and_injection,
 )
 
 
@@ -93,3 +98,56 @@ def test_production_evals_pass():
     result = l10_production.run()
     assert result["passed"] is True
     assert result["tip"]["amount_usd"] == 14.62
+
+
+def test_hand_coded_loop_has_tool_message():
+    result = l11_hand_code.run()
+    assert result["hand_coded"] is True
+    assert result["framework"] is None
+    assert result["roles"] == ["human", "ai", "tool", "ai"]
+    assert result["tool_messages"] == 1
+    assert "umbrella" in result["answer"].lower()
+
+
+def test_hallucination_requires_observations():
+    result = l12_hallucination.run()
+    assert result["guess_grounded"] is False
+    assert result["cited_grounded"] is True
+    assert result["extra_claim_grounded"] is False
+    assert result["fabricated"] is True
+    assert result["real_tool_not_fabricated"] is False
+
+
+def test_sampling_controls_are_named():
+    result = l13_controls.run()
+    assert "temperature" in result["parameters"]
+    assert "top_p" in result["parameters"]
+    assert "TPU" in result["tpu_is_hardware"] or "chip" in result["tpu_is_hardware"]
+    assert result["cold"] == "tool"
+    assert result["hot_seed_stable"] is True
+    assert result["tight_top_p"] == "tool"
+    assert result["top_k_1"] == "tool"
+    assert result["truncated"] == "truncated"
+    assert result["seed_changes_hot_draw"] is True
+
+
+def test_rate_limits_honor_retry_after():
+    result = l14_rate_limits.run()
+    assert result["under_budget"] == "ok"
+    assert result["rpm_full"] == "rpm"
+    assert result["tpm_full"] == "tpm"
+    assert result["policy_not_retried"] == "stop"
+    assert result["honored"] == "backoff"
+    assert result["ignored_header"] == "retry_now"
+    assert result["second_429"] == "exhausted"
+
+
+def test_context_trim_keeps_latest_tool_and_ignores_injection():
+    result = l15_context_and_injection.run()
+    assert result["kept_system"] is True
+    assert result["kept_latest_tool"] is True
+    assert result["dropped_old_answer"] is True
+    assert result["injection_obeyed"] is False
+    assert result["injection_detected"] is True
+    assert result["execute_on_tool_calls"] is True
+    assert result["execute_on_length"] is False

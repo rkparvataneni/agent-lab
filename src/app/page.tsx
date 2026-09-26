@@ -33,7 +33,7 @@ export default function HomePage() {
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href="/build">
-              Developer track · LangGraph
+              Expert course · hand-code the loop
               <ArrowRight data-icon="inline-end" />
             </LinkButton>
             <LinkButton href={`/lesson/${nextLesson.slug}`} variant="outline">
@@ -129,10 +129,11 @@ export default function HomePage() {
               <Terminal className="size-4" />
             </span>
             <div>
-              <h2 className="font-heading text-2xl">Developer track</h2>
+              <h2 className="font-heading text-2xl">Expert course</h2>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Ten LangGraph files you run with pytest: evidence gates, contracts,
-                loop guards, stores, failure policy, approval, handoffs, trajectory evals.
+                Fifteen Python files you run with pytest: the hand-written loop,
+                hallucination checks, sampling controls, rate limits, and the graph
+                policies around them.
               </p>
             </div>
           </div>

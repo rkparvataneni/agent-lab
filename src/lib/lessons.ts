@@ -6,6 +6,10 @@ export const LESSON_SLUGS = [
   "react",
   "memory",
   "planning",
+  "hand-code",
+  "hallucination",
+  "controls",
+  "rate-limits",
 ] as const;
 
 export type LessonSlug = (typeof LESSON_SLUGS)[number];
@@ -18,10 +22,19 @@ export type LessonDemo = {
   showPlanningToggle: boolean;
   showFailureToggle: boolean;
   dualRun: boolean;
+  showGroundingToggle?: boolean;
+  showControls?: boolean;
+  showRateLimitToggle?: boolean;
   defaultTools?: Partial<Record<ToolName, boolean>>;
   defaultMemory?: boolean;
   defaultPlanning?: boolean;
   defaultFailure?: boolean;
+  defaultGrounding?: boolean;
+  defaultHighTemperature?: boolean;
+  defaultTightTopP?: boolean;
+  defaultTinyMaxTokens?: boolean;
+  defaultRateLimit?: boolean;
+  defaultHonorRetryAfter?: boolean;
 };
 
 export type Lesson = {
@@ -291,6 +304,185 @@ function recall(goal: string) {
     },
     studioHint:
       "Keep the conflict on. The trace should name the failure, skip East, and reserve West.",
+  },
+  {
+    slug: "hand-code",
+    number: "06",
+    title: "Hand-code the loop",
+    duration: "15 min",
+    summary:
+      "Write the cycle on a blank file: messages in, a model call, your code runs tools, a tool message goes back, stop when there is no tool call.",
+    concept: {
+      heading: "If you cannot write the loop, you cannot debug the graph",
+      paragraphs: [
+        "A framework compiles this and nothing more. Start a list with the user message. Call the model. If the assistant message has no tool_calls, that content is the answer and the loop ends. If it does, your code — not the model — executes each call and appends a tool message with the same tool_call_id. Then you call the model again.",
+        "The roles on a finished weather run are human, assistant, tool, assistant. The tool message is the only place an observation is allowed to appear. The model does not get to narrate a forecast it did not receive. Parallel calls are several tool messages, one id each, before the next model call. A missing id is a broken transcript, and the provider will reject the next request.",
+        "Lesson 11 in the Python track is this loop with no StateGraph. After it runs, open lesson 04 and name the node that corresponds to each line. create_agent is the same loop plus middleware. The middleware will not invent a tool you forgot to dispatch.",
+      ],
+      takeaways: [
+        "Your process executes tools. The model only proposes name and args.",
+        "Every tool message carries the tool_call_id from the assistant message.",
+        "Stop when tool_calls is empty, or when the step budget hits.",
+      ],
+    },
+    code: {
+      title: "The whole agent",
+      source: `messages = [user(goal)]
+for _ in range(8):
+    ai = model.invoke(messages)
+    messages.append(ai)
+    if not ai.tool_calls:
+        return ai.content
+    for call in ai.tool_calls:
+        result = tools[call.name](**call.args)
+        messages.append(tool(call.id, result))
+raise BudgetExceeded`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: true,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      dualRun: false,
+    },
+    studioHint:
+      "Run it. The chatbot side is one completion. The agent side should be thought, weather, observation, answer — four beats you can write by hand.",
+  },
+  {
+    slug: "hallucination",
+    number: "07",
+    title: "Hallucination",
+    duration: "14 min",
+    summary:
+      "A fluent sentence is not evidence. Reject an answer whose numbers never appeared in a tool message, and reject a tool result the runtime did not produce.",
+    concept: {
+      heading: "Three different lies, three different checks",
+      paragraphs: [
+        "The model can answer from its parameters and never call a tool. That guess can be socially plausible and still wrong: roughly $15 instead of $14.62, a climate prior instead of Saturday's forecast. The check is mechanical. Every number in the final answer must appear in some tool message from this run. No observation list, no numeric claim.",
+        "The model can also narrate an observation that never ran: “the weather tool said 70%” while the transcript has no tool message. That is a fabricated result. Only your dispatcher appends tool messages. If the assistant content quotes a tool and the transcript has no matching tool message, discard the turn.",
+        "A third failure is a real tool result plus an extra claim the tool did not make. Search returned the hours, and the answer adds a phone number. The extra span is still a hallucination. Grounding is span-level, not “a tool was called somewhere.” Turn observations on and the dinner check should cite $14.62 and 22:00. Turn them off and the trace should answer without a single tool call — that answer is the bug.",
+      ],
+      takeaways: [
+        "Numbers in the answer must be a subset of numbers in tool messages.",
+        "The model does not write tool messages. Your dispatcher does.",
+        "A tool call that happened does not license claims the tool did not return.",
+      ],
+    },
+    code: {
+      title: "Cite or refuse",
+      source: `def grounded(answer: str, observations: list[str]) -> bool:
+    if not observations:
+        return False
+    claimed = set(re.findall(r"\\d+(?:\\.\\d+)?", answer))
+    evidence = set(re.findall(r"\\d+(?:\\.\\d+)?", " ".join(observations)))
+    return claimed <= evidence`,
+    },
+    demo: {
+      missionId: "dinner-tip",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showGroundingToggle: true,
+      dualRun: false,
+      defaultGrounding: false,
+    },
+    studioHint:
+      "Run once with observations off. The answer should contain no tool call. Turn observations on and demand $14.62 from the calculator, not “roughly $15”.",
+  },
+  {
+    slug: "controls",
+    number: "08",
+    title: "Sampling controls",
+    duration: "16 min",
+    summary:
+      "temperature, top_p, top_k, and max_tokens change which token is drawn. A TPU does not. TPM is a budget, not a sampler.",
+    concept: {
+      heading: "The knobs on the model call, named correctly",
+      paragraphs: [
+        "temperature stretches or sharpens the distribution. Near 0 the mode wins, which for a tool-using agent should be the tool-call token. Near 1 the tail is in play and the model can skip the tool and write a guess. top_p (nucleus) keeps the smallest set of tokens whose probabilities sum to p. A tight top_p collapses that set back onto the mode even when temperature is high. top_k keeps only the k most likely tokens. top_k = 1 is greedy. These three interact. Set them on purpose, and log them on the trace.",
+        "max_tokens is not a style control. It is a hard stop. If the cap hits while the tool-call JSON is still open, finish_reason is length, the arguments are garbage, and you must not execute them. frequency_penalty and presence_penalty push the model off tokens it already used. seed plus temperature 0 is how you reproduce a trace. stop is a string list that ends the completion. n is how many completions you asked for. None of these repair a missing tool.",
+        "A TPU is a chip some providers train and serve models on. You do not pass tpu= to the agent loop. TPM, tokens per minute, is a rate-limit budget on the account. top_p is the sampler. People mix the three up because the names are short. Flip high temperature and the studio skips the tool. Flip tight top-p as well and the tool call comes back. Flip tiny max tokens and the run stops on length before any tool runs.",
+      ],
+      takeaways: [
+        "temperature, top_p, and top_k choose the token. Log the values you sent.",
+        "max_tokens can truncate a tool call. A partial call is not executed.",
+        "A TPU is hardware. top_p is a sampler. TPM is a rate-limit budget.",
+      ],
+    },
+    code: {
+      title: "What you actually send",
+      source: `model.invoke(messages, temperature=0, top_p=1, max_tokens=256, seed=7)
+
+# temperature high + top_p open  → may skip the tool
+# top_p <= 0.2 or top_k == 1     → mode, usually the tool token
+# max_tokens too small           → finish_reason "length", do not exec
+# TPU                            → not a parameter
+# TPM                            → tokens per minute, a budget, see rate limits`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showControls: true,
+      dualRun: false,
+      defaultHighTemperature: false,
+      defaultTightTopP: false,
+      defaultTinyMaxTokens: false,
+    },
+    studioHint:
+      "Run the default first and watch weather fire. Then high temperature alone, then high temperature plus tight top-p, then tiny max tokens.",
+  },
+  {
+    slug: "rate-limits",
+    number: "09",
+    title: "Rate limits",
+    duration: "14 min",
+    summary:
+      "429 means the account budget is empty. Honor Retry-After. Do not retry a policy error. RPM and TPM are different caps.",
+    concept: {
+      heading: "Backoff is a policy, not a while-true",
+      paragraphs: [
+        "Providers cap you two ways. RPM is requests per minute. TPM is tokens per minute. A short request can pass RPM and still fail TPM if the prompt is huge. The honest signal is HTTP 429 with a Retry-After header, sometimes plus a body that names which budget you hit. Sleep that long, then send the same request once. Immediate retries sit inside the same window and turn one 429 into a burst that empties RPM for everyone else on the key.",
+        "Not every failure is a 429. A policy rejection — illegal calculator input, a tool that is not allowed — will fail the same way on the next try. Retrying it spends budget to relearn a fact you already have. Timeouts and 429s are the retryable classes, and both need a cap: one sleep, one retry, then surface the error. Jitter matters when many workers share a key, or they wake up together and stampede.",
+        "Leave Retry-After honored and the trace should show the 429, the sleep, then the weather call and an answer. Turn the honor switch off and the trace should stop on the second 429 with no forecast. That second call did not make the model smarter.",
+      ],
+      takeaways: [
+        "429 plus Retry-After: sleep, retry once, then stop.",
+        "RPM and TPM are separate. A small request can still blow TPM.",
+        "Policy errors are not rate limits. Do not back off into them.",
+      ],
+    },
+    code: {
+      title: "One sleep, one retry",
+      source: `if response.status == 429 and attempt == 0 and honor:
+    time.sleep(float(response.headers["retry-after"]))
+    return send(request)          # same request, not a new plan
+if response.status == 429:
+    raise BudgetExhausted
+if response.error_class == "policy":
+    raise PolicyError              # do not loop`,
+    },
+    demo: {
+      missionId: "tokyo-weekend",
+      compareChatbot: false,
+      allowToolToggle: false,
+      showMemoryToggle: false,
+      showPlanningToggle: false,
+      showFailureToggle: false,
+      showRateLimitToggle: true,
+      dualRun: false,
+      defaultRateLimit: true,
+      defaultHonorRetryAfter: true,
+    },
+    studioHint:
+      "Run with Retry-After honored. You should see 429, a sleep, then the forecast. Turn honor off and the run should die on the second 429.",
   },
 ];
 
