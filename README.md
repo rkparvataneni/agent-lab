@@ -2,8 +2,8 @@
 
 Expert agent course. You leave able to hand-code an agent and to name the failures that show up once it is on a real model: hallucination, sampling controls, rate limits, context, and injection.
 
-1. **Design studio** (Next.js) — watch the loop, an ungrounded answer, a hot sample, a truncated tool call, and a 429. No API key.
-2. **Expert course** (Python) — the same lessons as code you run: a hand-written loop, citation checks, temperature and top_p, RPM/TPM, then the LangGraph policies around them.
+1. **Design studio** (Next.js) — twenty lessons. Watch the loop, an ungrounded answer, a hot sample, a truncated tool call, a 429, a rejected write, a bad handoff, a failed eval, and an injected tool result. No API key.
+2. **Expert course** (Python) — the same ideas as code you run: a hand-written loop, citation checks, temperature and top_p, RPM/TPM, then the LangGraph policies around them. Numbering differs; the table below is the map.
 
 ## Design studio
 
@@ -17,7 +17,7 @@ Open [http://localhost:43217](http://localhost:43217).
 - `/` path
 - `/lesson/loop` … `/lesson/injection`
 - `/playground`
-- `/build` — the LangGraph syllabus, with the real Python source on each page
+- `/build` — the twenty Python lessons, source on the page, each one linked to its design studio
 
 ```bash
 npm test
@@ -57,19 +57,23 @@ The model is scripted (`python/agentic_lab/llm.py`) so every lesson is determini
 
 | Design studio | Code (Python) |
 |---------------|----------------|
-| Control policy | 01 evidence gate, 02 routers and reducers |
-| Tool contracts | 03 error class and retry rule |
-| Loop guards | 04 fingerprint stop, 05 harness boundary |
-| Context engineering | 06 thread vs store |
-| Failure policy | 07 retry, replan, escalate |
-| Hand-code the loop | 11 messages, dispatch, tool_call_id |
-| Hallucination | 12 numbers must be cited |
-| Sampling controls | 13 temperature, top_p, top_k, max_tokens |
-| Rate limits | 14 RPM, TPM, Retry-After |
-| Ask, do not invent | 16 one question, no invented slot |
-| Partial failure | 17 keep the success, retry the failure |
-| Budgets and routing | 18 small model, hard token ceiling |
-| Credentials | 19 token stays off the prompt |
-| A trace you can defend | 20 blame the span; workflow if the steps are known |
-| Routers, harness, approval, handoff, evals, injection | Studio 15–20, the same ideas as Python 02, 05, 08, 09, 10, and 15 |
-| — | 08 approve then write, 09 handoff contracts, 10 trajectory evals, 15 context and injection |
+| 01 Control policy | 01 evidence gate |
+| 02 Tool contracts | 03 error class and retry rule |
+| 03 Loop guards | 04 fingerprint stop |
+| 04 Context engineering | 06 thread vs store |
+| 05 Failure policy | 07 retry, replan, escalate |
+| 06 Hand-code the loop | 11 messages, dispatch, tool_call_id |
+| 07 Hallucination | 12 numbers must be cited |
+| 08 Sampling controls | 13 temperature, top_p, top_k, max_tokens |
+| 09 Rate limits | 14 RPM, TPM, Retry-After |
+| 10 Ask, do not invent | 16 one question, no invented slot |
+| 11 Partial failure | 17 keep the success, retry the failure |
+| 12 Budgets and routing | 18 small model, hard token ceiling |
+| 13 Credentials | 19 token stays off the prompt |
+| 14 A trace you can defend | 20 blame the span; workflow if the steps are known |
+| 15 Routers | 02 the next node is a pure function of state |
+| 16 Harness boundary | 05 `create_agent` plus the assertion it will not make |
+| 17 Approve, then write | 08 interrupt before the write; the write is idempotent |
+| 18 Handoff contracts | 09 the ticket is an allow-list |
+| 19 Trajectory evals | 10 the message order is the fixture |
+| 20 Context and injection | 15 trim old turns; tool text is data |
