@@ -123,6 +123,97 @@ test("an over-budget answer is not sent", () => {
   assert.deepEqual(run.toolsUsed, []);
 });
 
+test("an unclear goal does not pick a desk", () => {
+  const unclear = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ routeExplicitly: true, unclearRoute: true }),
+  );
+  assert.equal(unclear.status, "blocked");
+  assert.deepEqual(unclear.toolsUsed, []);
+
+  const routed = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ routeExplicitly: true, unclearRoute: false }),
+  );
+  assert.deepEqual(routed.toolsUsed, ["weather"]);
+  assert.ok(routed.steps.some((step) => step.title === "Router"));
+});
+
+test("dropping the grounding assertion skips the tool", () => {
+  const dropped = runAgent("tokyo-weekend", defaultConfig({ dropAssertion: true }));
+  assert.deepEqual(dropped.toolsUsed, []);
+
+  const checked = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ assertGrounding: true }),
+  );
+  assert.deepEqual(checked.toolsUsed, ["weather"]);
+  assert.ok(checked.steps.some((step) => step.title === "Grounding assertion"));
+});
+
+test("reject does not reserve and approve is idempotent", () => {
+  const rejected = runAgent(
+    "book-room",
+    defaultConfig({ awaitApproval: true, approveWrite: false }),
+  );
+  assert.equal(rejected.status, "blocked");
+  assert.deepEqual(rejected.toolsUsed, []);
+
+  const approved = runAgent(
+    "book-room",
+    defaultConfig({ awaitApproval: true, approveWrite: true }),
+  );
+  assert.equal(approved.toolsUsed.filter((tool) => tool === "rooms").length, 1);
+  assert.match(approved.answer ?? "", /did not book it twice/);
+});
+
+test("a widened weather handoff is rejected", () => {
+  const wide = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ handoffCheck: true, widenHandoff: true }),
+  );
+  assert.equal(wide.status, "blocked");
+  assert.deepEqual(wide.toolsUsed, []);
+
+  const ticket = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ handoffCheck: true, widenHandoff: false }),
+  );
+  assert.deepEqual(ticket.toolsUsed, ["weather"]);
+});
+
+test("a confident sentence without a tool fails the eval", () => {
+  const failed = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ checkTrajectory: true, failEval: true }),
+  );
+  assert.equal(failed.status, "blocked");
+  assert.match(failed.steps.at(-1)?.body ?? "", /no weather call/);
+
+  const passed = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ checkTrajectory: true, failEval: false }),
+  );
+  assert.equal(passed.status, "answered");
+  assert.ok(passed.steps.some((step) => step.title === "Eval passed"));
+});
+
+test("obeying tool text reserves East", () => {
+  const ignored = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ injectionCheck: true, obeyInjection: false }),
+  );
+  assert.deepEqual(ignored.toolsUsed, ["weather"]);
+  assert.doesNotMatch(ignored.answer ?? "", /Reserved East/);
+
+  const obeyed = runAgent(
+    "tokyo-weekend",
+    defaultConfig({ injectionCheck: true, obeyInjection: true }),
+  );
+  assert.ok(obeyed.toolsUsed.includes("rooms"));
+  assert.match(obeyed.answer ?? "", /Reserved East/);
+});
+
 test("a token in the prompt refuses the call", () => {
   const leaked = runAgent("book-room", defaultConfig({ leakSecret: true }));
   assert.equal(leaked.status, "blocked");

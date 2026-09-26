@@ -38,6 +38,18 @@ function configFromDemo(demo: LessonDemo): RunConfig {
     partialFailure: demo.defaultPartialFailure ?? false,
     overBudget: demo.defaultOverBudget ?? false,
     leakSecret: demo.defaultLeakSecret ?? false,
+    routeExplicitly: demo.routeExplicitly ?? false,
+    unclearRoute: demo.defaultUnclearRoute ?? false,
+    assertGrounding: demo.assertGrounding ?? false,
+    dropAssertion: demo.defaultDropAssertion ?? false,
+    awaitApproval: demo.awaitApproval ?? false,
+    approveWrite: demo.defaultApproveWrite ?? false,
+    handoffCheck: demo.handoffCheck ?? false,
+    widenHandoff: demo.defaultWidenHandoff ?? false,
+    checkTrajectory: demo.checkTrajectory ?? false,
+    failEval: demo.defaultFailEval ?? false,
+    injectionCheck: demo.injectionCheck ?? false,
+    obeyInjection: demo.defaultObeyInjection ?? false,
     tools: demo.defaultTools,
   });
 }
@@ -65,6 +77,12 @@ export function Studio({
   const [partialFailure, setPartialFailure] = useState(demo.defaultPartialFailure ?? false);
   const [overBudget, setOverBudget] = useState(demo.defaultOverBudget ?? false);
   const [leakSecret, setLeakSecret] = useState(demo.defaultLeakSecret ?? false);
+  const [unclearRoute, setUnclearRoute] = useState(demo.defaultUnclearRoute ?? false);
+  const [dropAssertion, setDropAssertion] = useState(demo.defaultDropAssertion ?? false);
+  const [approveWrite, setApproveWrite] = useState(demo.defaultApproveWrite ?? false);
+  const [widenHandoff, setWidenHandoff] = useState(demo.defaultWidenHandoff ?? false);
+  const [failEval, setFailEval] = useState(demo.defaultFailEval ?? false);
+  const [obeyInjection, setObeyInjection] = useState(demo.defaultObeyInjection ?? false);
   const [notes, setNotes] = useState<string[]>([]);
   const [run, setRun] = useState<AgentRun | null>(null);
   const [visible, setVisible] = useState(0);
@@ -105,6 +123,18 @@ export function Studio({
         partialFailure,
         overBudget,
         leakSecret,
+        routeExplicitly: demo.routeExplicitly ?? false,
+        unclearRoute,
+        assertGrounding: demo.assertGrounding ?? false,
+        dropAssertion,
+        awaitApproval: demo.awaitApproval ?? false,
+        approveWrite,
+        handoffCheck: demo.handoffCheck ?? false,
+        widenHandoff,
+        checkTrajectory: demo.checkTrajectory ?? false,
+        failEval,
+        injectionCheck: demo.injectionCheck ?? false,
+        obeyInjection,
       },
       notes,
     );
@@ -212,7 +242,13 @@ export function Studio({
       demo.showClarifyToggle ||
       demo.showPartialToggle ||
       demo.showBudgetToggle ||
-      demo.showSecretToggle ? (
+      demo.showSecretToggle ||
+      demo.showRouterToggle ||
+      demo.showAssertionToggle ||
+      demo.showApprovalToggle ||
+      demo.showHandoffToggle ||
+      demo.showEvalToggle ||
+      demo.showInjectionToggle ? (
         <div className="grid gap-3 md:grid-cols-2">
           {demo.allowToolToggle ? (
             <Card>
@@ -380,6 +416,69 @@ export function Studio({
                     hint="This is the wrong design. The run should refuse."
                     checked={leakSecret}
                     onCheckedChange={setLeakSecret}
+                  />
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {demo.showRouterToggle ||
+          demo.showAssertionToggle ||
+          demo.showApprovalToggle ||
+          demo.showHandoffToggle ||
+          demo.showEvalToggle ||
+          demo.showInjectionToggle ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Design studio</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {demo.showRouterToggle ? (
+                  <ToggleRow
+                    label="Goal is unclear"
+                    hint="The router should stop. It should not pick a desk."
+                    checked={unclearRoute}
+                    onCheckedChange={setUnclearRoute}
+                  />
+                ) : null}
+                {demo.showAssertionToggle ? (
+                  <ToggleRow
+                    label="Drop the grounding assertion"
+                    hint="The harness may answer with no tool message."
+                    checked={dropAssertion}
+                    onCheckedChange={setDropAssertion}
+                  />
+                ) : null}
+                {demo.showApprovalToggle ? (
+                  <ToggleRow
+                    label="Approve the reserve"
+                    hint="Off: reject, ledger stays empty. On: write once."
+                    checked={approveWrite}
+                    onCheckedChange={setApproveWrite}
+                  />
+                ) : null}
+                {demo.showHandoffToggle ? (
+                  <ToggleRow
+                    label="Add rooms to the weather ticket"
+                    hint="The allow-list should reject the extra tool."
+                    checked={widenHandoff}
+                    onCheckedChange={setWidenHandoff}
+                  />
+                ) : null}
+                {demo.showEvalToggle ? (
+                  <ToggleRow
+                    label="Answer with no weather call"
+                    hint="The sentence sounds right. The eval should fail."
+                    checked={failEval}
+                    onCheckedChange={setFailEval}
+                  />
+                ) : null}
+                {demo.showInjectionToggle ? (
+                  <ToggleRow
+                    label="Obey the tool text"
+                    hint="Off: East stays unreserved. On: that is the bug."
+                    checked={obeyInjection}
+                    onCheckedChange={setObeyInjection}
                   />
                 ) : null}
               </CardContent>

@@ -34,6 +34,29 @@ export type BuildLesson = {
   why: string;
 };
 
+export const STUDIO_FOR_BUILD: Record<BuildSlug, string> = {
+  "chain-vs-graph": "loop",
+  "state-graph": "routers",
+  tools: "tools",
+  "react-graph": "react",
+  "create-agent": "harness",
+  memory: "memory",
+  "plan-replan": "planning",
+  hitl: "hitl",
+  "multi-agent": "handoff",
+  production: "evals",
+  "hand-code": "hand-code",
+  hallucination: "hallucination",
+  controls: "controls",
+  "rate-limits": "rate-limits",
+  "context-injection": "injection",
+  clarify: "clarify",
+  partial: "partial",
+  "budget-routing": "budget",
+  credentials: "credentials",
+  trace: "trace",
+};
+
 export const BUILD_LESSONS: BuildLesson[] = [
   {
     slug: "chain-vs-graph",

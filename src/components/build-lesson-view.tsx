@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/code-block";
 import { LinkButton } from "@/components/link-button";
 import { Badge } from "@/components/ui/badge";
-import { adjacentBuild, type BuildLesson } from "@/lib/build-lessons";
+import { adjacentBuild, STUDIO_FOR_BUILD, type BuildLesson } from "@/lib/build-lessons";
 
 export function BuildLessonView({
   lesson,
@@ -49,6 +49,10 @@ export function BuildLessonView({
               </li>
             ))}
           </ul>
+          <LinkButton href={`/lesson/${STUDIO_FOR_BUILD[lesson.slug]}`} variant="outline">
+            Open the design studio
+            <ArrowRight data-icon="inline-end" />
+          </LinkButton>
           <div className="rounded-xl border border-border bg-card/70 px-4 py-3">
             <p className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
               Run this file

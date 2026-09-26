@@ -63,6 +63,24 @@ export type RunConfig = {
   overBudget: boolean;
   /** The user token was copied into the prompt. Refuse the call. */
   leakSecret: boolean;
+  /** Show the router. An unclear goal stops instead of picking a desk. */
+  routeExplicitly: boolean;
+  unclearRoute: boolean;
+  /** create_agent must still prove a tool ran. */
+  assertGrounding: boolean;
+  dropAssertion: boolean;
+  /** Interrupt before the write. */
+  awaitApproval: boolean;
+  approveWrite: boolean;
+  /** Supervisor hands off an allow-list. */
+  handoffCheck: boolean;
+  widenHandoff: boolean;
+  /** The eval looks at message order, not the final sentence. */
+  checkTrajectory: boolean;
+  failEval: boolean;
+  /** Tool text that says "ignore previous instructions". */
+  injectionCheck: boolean;
+  obeyInjection: boolean;
 };
 
 export type RunStatus = "answered" | "blocked" | "failed";

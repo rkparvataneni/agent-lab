@@ -15,7 +15,7 @@ npm run dev
 Open [http://localhost:43217](http://localhost:43217).
 
 - `/` path
-- `/lesson/loop` … `/lesson/rate-limits`
+- `/lesson/loop` … `/lesson/injection`
 - `/playground`
 - `/build` — the LangGraph syllabus, with the real Python source on each page
 
@@ -71,4 +71,5 @@ The model is scripted (`python/agentic_lab/llm.py`) so every lesson is determini
 | Budgets and routing | 18 small model, hard token ceiling |
 | Credentials | 19 token stays off the prompt |
 | A trace you can defend | 20 blame the span; workflow if the steps are known |
+| Routers, harness, approval, handoff, evals, injection | Studio 15–20, the same ideas as Python 02, 05, 08, 09, 10, and 15 |
 | — | 08 approve then write, 09 handoff contracts, 10 trajectory evals, 15 context and injection |
